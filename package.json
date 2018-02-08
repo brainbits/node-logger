@@ -1,0 +1,90 @@
+{
+    "name": "logger",
+    "version": "0.0.1",
+    "description": "Logger for node projects",
+    "main": "index.js",
+    "scripts": {
+        "build:watch": "npx babel src --out-dir ./dist --source-maps --watch --ignore test.js,setupTests.js",
+        "build": "npx babel src --out-dir ./dist --ignore test.js,setupTests.js,__mocks__/*",
+        "coverage": "NODE_ENV=test jest --coverage",
+        "lint": "eslint ./src",
+        "test:watch": "NODE_ENV=test jest --watch",
+        "test": "NODE_ENV=test jest"
+    },
+    "babel": {
+        "presets": [
+            [
+                "env",
+                {
+                    "targets": {
+                        "node": "current"
+                    }
+                }
+            ]
+        ],
+        "plugins": [
+            [
+                "transform-object-rest-spread",
+                {
+                    "useBuiltIns": true
+                }
+            ],
+            "babel-plugin-inline-import"
+        ]
+    },
+    "eslintConfig": {
+        "parser": "babel-eslint",
+        "extends": [
+            "brainbits",
+            "brainbits-jest"
+        ],
+        "env": {
+            "node": true,
+            "jest": true
+        }
+    },
+    "jest": {
+        "setupFiles": [
+            "./src/setupTests.js"
+        ],
+        "collectCoverage": true,
+        "collectCoverageFrom": [
+            "src/**/*.js"
+        ],
+        "coverageDirectory": "coverage",
+        "transform": {
+            "^.+\\.js$": "babel-jest"
+        },
+        "roots": [
+            "<rootDir>/src/"
+        ]
+    },
+    "repository": {
+        "type": "git",
+        "url": "git@gitlab.brainbits.net:tspm/node-logger.git"
+    },
+    "keywords": [
+        "logger",
+        "winston",
+        "monolog"
+    ],
+    "author": "Brainbits <moriarty@brainbits.net>",
+    "license": "MIT",
+    "dependencies": {
+        "babel-cli": "^6.26.0",
+        "babel-core": "^6.26.0",
+        "babel-plugin-inline-import": "^2.0.6",
+        "babel-plugin-transform-object-rest-spread": "^6.26.0",
+        "babel-preset-env": "^1.6.1",
+        "date-fns": "^1.29.0",
+        "winston": "^3.0.0-rc1"
+    },
+    "devDependencies": {
+        "babel-eslint": "^8.2.1",
+        "eslint": "^4.17.0",
+        "eslint-config-brainbits": "^0.4.2",
+        "eslint-config-brainbits-jest": "^0.4.2",
+        "eslint-plugin-import": "^2.8.0",
+        "eslint-plugin-jest": "^21.7.0"
+    }
+}
