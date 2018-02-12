@@ -1,0 +1,61 @@
+stages:
+- setup
+- test
+- build
+- release
+
+image: node:alpine
+
+variables:
+    GIT_STRATEGY: fetch
+
+.cache:modules: &cache
+    retry: 1
+    cache:
+        key: modules
+        paths:
+            - node_modules/
+        policy: pull
+
+
+install:modules:
+    stage: setup
+    cache:
+        key: modules
+        paths:
+            - node_modules/
+    script: yarn install
+
+test:lint:
+    <<: *cache
+    dependencies:
+        - install:modules
+    stage: test
+    script: yarn lint
+
+test:test:
+    <<: *cache
+    dependencies:
+        - install:modules
+    stage: test
+    script: yarn test --forceExit
+
+build:package:
+    <<: *cache
+    dependencies:
+        - install:modules
+    stage: build
+    script: yarn build
+
+release:package:
+    dependencies:
+        - build:package
+    stage: release
+    artifacts:
+        paths:
+            - ./*.tgz
+    script:
+        - rm -rf ./node_modules
+        - yarn pack
+    only:
+        - master
