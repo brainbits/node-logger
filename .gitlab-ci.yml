@@ -56,6 +56,7 @@ release:package:
             - ./*.tgz
     script:
         - rm -rf ./node_modules
+        - rm -r ./dist/*.js.map
         - yarn pack
     only:
         - master
