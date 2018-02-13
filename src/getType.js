@@ -33,3 +33,21 @@ export function isString(value) {
 export function isError(value) {
     return getType(value) === 'Error';
 }
+
+/**
+ * @description Checks if elements is an Arry
+ * @param {any} value
+ * @returns {boolean}
+ */
+export function isArray(value) {
+    return Array.isArray(value);
+}
+
+/**
+ * @description Checks if elements is an Arry
+ * @param {any} value
+ * @returns {boolean}
+ */
+export function isFunction(value) {
+    return getType(value) === 'Function';
+}

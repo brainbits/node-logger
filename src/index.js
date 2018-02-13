@@ -1,6 +1,6 @@
 import { format as dateFormat } from 'date-fns';
 import { createLogger, format, transports } from 'winston';
-import { isError, isObject, isString } from './getType';
+import { isError, isObject, isString, isArray } from './getType';
 
 // console.dir(createLogger);
 // console.dir(format.printf);
@@ -19,36 +19,54 @@ const CHANNEL = env.LOGGER_CHANNEL || env.npm_package_name;
 function timestamp(timestampFormat = TIMESTAMP_FORMAT) {
     return dateFormat(new Date(), timestampFormat);
 }
-
-function monolog({ channel }) {
+/**
+ * @description Make a string of an non empty object or return ‘[]' as a string
+ * @param {object} object
+ * @returns {string} The result as a string
+ */
+function stringifyExtras(object) {
+    if (isObject(object) && Object.keys(object).length !== 0) {
+        return JSON.stringify(object);
+    }
+    return '[]';
+}
+/**
+ * @description Monolog formatter for winston
+ * @param {object}
+ * @returns
+ */
+function monolog(channel) {
     return printf((info) => {
         let logMessage;
-        let context = '[]'; // Default for conext if it is empty
-        let extra = '[]'; // Default for conext if it is empty
-
+        let context = '[]'; // Default for context if it is empty
+        let extra = '[]'; // Default for extra if it is empty
         let level = info.level.toUpperCase();
 
         if (isError(info.message)) {
             const { message: error } = info;
             const {
-                name, message, stack, ...rest
+                name, message, data, ...rest
             } = error;
+
             // Set level to error if it is WRONG!
             level = 'ERROR';
             // Put error message to our log message
-            logMessage = info.message.toString();
-            // Put stack into context
-            context = JSON.stringify({ name, message });
+            logMessage = `${name} - ${message}`;
+            context = stringifyExtras({ ...data });
             // Put the rest into extra
-            if (isObject(rest) && Object.keys(rest).length >= 1) {
-                extra = JSON.stringify({ ...rest });
-            }
+            extra = stringifyExtras({ ...rest });
         } else if (isObject(info.message)) {
-            logMessage = Object.values(info.message).join(' ');
+            const { message, data, ...rest } = info.message;
+
+            logMessage = message || '-';
+            context = stringifyExtras(data);
+            extra = stringifyExtras(rest);
+        } else if (isArray(info.message)) {
+            logMessage = info.message.join(' ');
         } else if (isString(info.message)) {
             logMessage = info.message;
         } else {
-            logMessage = '';
+            logMessage = '-';
         }
         // Monolog format: "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n"
         const logFormat = `[${timestamp()}] ${channel}.${level}: ${logMessage} ${context} ${extra}`;
@@ -58,7 +76,7 @@ function monolog({ channel }) {
 }
 
 const logger = createLogger({
-    format: monolog({ channel: CHANNEL.toLowerCase() }),
+    format: monolog(CHANNEL.toLowerCase()),
     transports: [
         new transports.Console({ handleExceptions: true }),
     ],

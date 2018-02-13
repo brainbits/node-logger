@@ -6,6 +6,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.isObject = isObject;
 exports.isString = isString;
 exports.isError = isError;
+exports.isArray = isArray;
+exports.isFunction = isFunction;
 /**
  * @description Get the type of a elements
  * @param {any} Any element
@@ -40,4 +42,22 @@ function isString(value) {
  */
 function isError(value) {
   return getType(value) === 'Error';
+}
+
+/**
+ * @description Checks if elements is an Arry
+ * @param {any} value
+ * @returns {boolean}
+ */
+function isArray(value) {
+  return Array.isArray(value);
+}
+
+/**
+ * @description Checks if elements is an Arry
+ * @param {any} value
+ * @returns {boolean}
+ */
+function isFunction(value) {
+  return getType(value) === 'Function';
 }

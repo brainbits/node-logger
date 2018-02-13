@@ -1,1 +1,1 @@
-process.env.LOGGER_CHANNEL = '<channel>';
+process.env.LOGGER_CHANNEL = 'channel';

@@ -1,6 +1,6 @@
 import { format as dateFormat } from 'date-fns';
 import { createLogger, format } from 'winston';
-import { HttpError, ConnectorError } from './errors';
+import { HttpError, ConnectorError, CustomError } from './errors';
 import logger from './index';
 
 jest.mock('winston');
@@ -43,9 +43,9 @@ describe('Logger', () => {
 
             it('should get the correct channel name', () => {
                 expect(monolog({
-                    message: '<message>',
-                    level: '<level>',
-                })).toMatch('<channel>.<LEVEL>: <message>');
+                    message: 'message',
+                    level: 'level',
+                })).toMatch('channel.LEVEL: message');
             });
 
             it('should return a monolog formatted message', () => {
@@ -53,7 +53,7 @@ describe('Logger', () => {
                     message: 'my message',
                     level: 'debug',
                 };
-                expect(monolog(info)).toEqual('[2010-01-31 23:59:59] <channel>.DEBUG: my message [] []');
+                expect(monolog(info)).toEqual('[2010-01-31 23:59:59] channel.DEBUG: my message [] []');
             });
 
             it('should handle a string in property message', () => {
@@ -64,7 +64,7 @@ describe('Logger', () => {
                 expect(monolog(info)).toMatch('this should be a string');
             });
 
-            it('should handle an object in property message', () => {
+            it('should handle an object in property message ', () => {
                 const info = {
                     message: {
                         type: 'message',
@@ -73,7 +73,22 @@ describe('Logger', () => {
                     },
                     level: 'info',
                 };
-                expect(monolog(info)).toMatch('message this is my content !!!!');
+                expect(monolog(info))
+                    .toMatch('- [] {"type":"message","content":"this is my content","foo":"!!!!"}');
+            });
+
+            it('should handle an object in property message', () => {
+                const info = {
+                    message: {
+                        type: 'message',
+                        content: 'this is my content',
+                        foo: '!!!!',
+                        message: 'foo bar lib message',
+                    },
+                    level: 'info',
+                };
+                expect(monolog(info))
+                    .toMatch('foo bar lib message [] {"type":"message","content":"this is my content","foo":"!!!!"}');
             });
 
             it('should handle an error instance in property message', () => {
@@ -83,7 +98,7 @@ describe('Logger', () => {
                     level: 'info',
                 };
                 const received = monolog(info);
-                expect(received).toMatch('[2010-01-31 23:59:59] <channel>.ERROR: Error: Expected more brain than this');
+                expect(received).toMatch('[2010-01-31 23:59:59] channel.ERROR: Error - Expected more brain than this');
             });
 
             it('should handle the custom error HttpError properly', () => {
@@ -94,7 +109,7 @@ describe('Logger', () => {
                 };
                 const received = monolog(info);
                 expect(received).toMatch('{"response":"401","request":"GET http://rest/api/resource","uuid":"1234-1234-1234"}');
-                expect(received).toMatch('HttpError: Not authorized');
+                expect(received).toMatch('HttpError - Not authorized');
             });
 
             it('should handle the custom error ConnectorError properly', () => {
@@ -105,7 +120,32 @@ describe('Logger', () => {
                 };
                 const received = monolog(info);
                 expect(received).toMatch('{"request":"GET http://rest/api/resource","uuid":"1234-1234-1234"}');
-                expect(received).toMatch('ConnectorError: Fetch failed');
+                expect(received).toMatch('ConnectorError - Fetch failed');
+            });
+
+            it('should handle any unknown error (extends custom error) properly', () => {
+                const error = new CustomError('Mapping failed', { foo: 'bar' });
+                error.name = 'MappingError';
+
+                const info = {
+                    message: error,
+                    level: 'info',
+                };
+                const received = monolog(info);
+                expect(received).toMatch('channel.ERROR: MappingError - Mapping failed {"foo":"bar"} []');
+            });
+
+            it('should handle unknown error types', () => {
+                const message = 'This is a message';
+                const locations = [{ line: 16, column: 5 }];
+                const error = new Error(`${message}`);
+                error.locations = locations;
+                const info = {
+                    message: error,
+                    level: 'error',
+                };
+                const received = monolog(info);
+                expect(received).toMatch('.ERROR: Error - This is a message [] {"locations":[{"line":16,"column":5}]}');
             });
 
             it('should handle other variable types', () => {
@@ -113,7 +153,7 @@ describe('Logger', () => {
                     message: ['my message'],
                     level: 'debug',
                 };
-                expect(monolog(info)).toEqual('[2010-01-31 23:59:59] <channel>.DEBUG:  [] []');
+                expect(monolog(info)).toEqual('[2010-01-31 23:59:59] channel.DEBUG: my message [] []');
             });
         });
     });

@@ -31,36 +31,56 @@ const CHANNEL = env.LOGGER_CHANNEL || env.npm_package_name;
 function timestamp(timestampFormat = TIMESTAMP_FORMAT) {
     return (0, _dateFns.format)(new Date(), timestampFormat);
 }
-
-function monolog({ channel }) {
+/**
+ * @description Make a string of an non empty object or return ‘[]' as a string
+ * @param {object} object
+ * @returns {string} The result as a string
+ */
+function stringifyExtras(object) {
+    if ((0, _getType.isObject)(object) && Object.keys(object).length !== 0) {
+        return JSON.stringify(object);
+    }
+    return '[]';
+}
+/**
+ * @description Monolog formatter for winston
+ * @param {object}
+ * @returns
+ */
+function monolog(channel) {
     return printf(info => {
         let logMessage;
-        let context = '[]'; // Default for conext if it is empty
-        let extra = '[]'; // Default for conext if it is empty
-
+        let context = '[]'; // Default for context if it is empty
+        let extra = '[]'; // Default for extra if it is empty
         let level = info.level.toUpperCase();
 
         if ((0, _getType.isError)(info.message)) {
             const { message: error } = info;
             const {
-                name, message, stack } = error,
-                  rest = _objectWithoutProperties(error, ['name', 'message', 'stack']);
+                name, message, data } = error,
+                  rest = _objectWithoutProperties(error, ['name', 'message', 'data']);
+
             // Set level to error if it is WRONG!
             level = 'ERROR';
             // Put error message to our log message
-            logMessage = info.message.toString();
-            // Put stack into context
-            context = JSON.stringify({ name, message });
+            logMessage = `${name} - ${message}`;
+            context = stringifyExtras(_extends({}, data));
             // Put the rest into extra
-            if ((0, _getType.isObject)(rest) && Object.keys(rest).length >= 1) {
-                extra = JSON.stringify(_extends({}, rest));
-            }
+            extra = stringifyExtras(_extends({}, rest));
         } else if ((0, _getType.isObject)(info.message)) {
-            logMessage = Object.values(info.message).join(' ');
+            const _info$message = info.message,
+                  { message, data } = _info$message,
+                  rest = _objectWithoutProperties(_info$message, ['message', 'data']);
+
+            logMessage = message || '-';
+            context = stringifyExtras(data);
+            extra = stringifyExtras(rest);
+        } else if ((0, _getType.isArray)(info.message)) {
+            logMessage = info.message.join(' ');
         } else if ((0, _getType.isString)(info.message)) {
             logMessage = info.message;
         } else {
-            logMessage = '';
+            logMessage = '-';
         }
         // Monolog format: "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n"
         const logFormat = `[${timestamp()}] ${channel}.${level}: ${logMessage} ${context} ${extra}`;
@@ -70,7 +90,7 @@ function monolog({ channel }) {
 }
 
 const logger = (0, _winston.createLogger)({
-    format: monolog({ channel: CHANNEL.toLowerCase() }),
+    format: monolog(CHANNEL.toLowerCase()),
     transports: [new _winston.transports.Console({ handleExceptions: true })],
     exitOnError: false
 });

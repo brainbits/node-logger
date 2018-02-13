@@ -5,10 +5,11 @@
  * @extends {Error}
  */
 export class CustomError extends Error {
-    constructor(message) {
+    constructor(message, data) {
         super();
-        this.name = 'CustomError';
+        this.data = data;
         this.message = message;
+        this.name = 'CustomError';
         if (Error.captureStackTrace) {
             Error.captureStackTrace(this, CustomError);
         }
