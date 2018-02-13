@@ -4,7 +4,7 @@
     "description": "Logger for node projects",
     "main": "dist/index.js",
     "scripts": {
-        "build:watch": "babel src --out-dir ./dist --source-maps --watch --ignore test.js,setupTests.js",
+        "build:watch": "npm run build -- --watch --source-maps",
         "build": "babel src --out-dir ./dist --ignore test.js,setupTests.js,__mocks__/*",
         "coverage": "jest --coverage",
         "lint": "eslint ./src",
