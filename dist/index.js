@@ -50,7 +50,7 @@ function monolog({ channel }) {
             // Put error message to our log message
             logMessage = info.message.toString();
             // Put stack into context
-            context = JSON.stringify({ name, message, stack });
+            context = JSON.stringify({ name, message });
             // Put the rest into extra
             if ((0, _getType.isObject)(rest) && Object.keys(rest).length >= 1) {
                 extra = JSON.stringify(_extends({}, rest));
