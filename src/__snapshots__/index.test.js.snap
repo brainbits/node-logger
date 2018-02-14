@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Index should export correctly 1`] = `
+Object {
+  "ConnectorError": [Function],
+  "CustomError": [Function],
+  "HttpError": [Function],
+  "logger": Object {
+    "log": [Function],
+  },
+}
+`;

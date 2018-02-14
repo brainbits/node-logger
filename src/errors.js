@@ -5,11 +5,12 @@
  * @extends {Error}
  */
 export class CustomError extends Error {
-    constructor(message, data) {
+    constructor(message, context, origin) {
         super();
-        this.data = data;
+        this.context = context;
         this.message = message;
         this.name = 'CustomError';
+        this.origin = origin;
         if (Error.captureStackTrace) {
             Error.captureStackTrace(this, CustomError);
         }
@@ -23,12 +24,12 @@ export class CustomError extends Error {
  * @extends {CustomError}
  */
 export class HttpError extends CustomError {
-    constructor(response, message, request, uuid) {
-        super(message);
+    constructor(message, context, requestUrl, statusCode, requestId) {
+        super(message, context);
         this.name = 'HttpError';
-        this.response = response;
-        this.request = request;
-        this.uuid = uuid;
+        this.statusCode = statusCode;
+        this.requestUrl = requestUrl;
+        this.requestId = requestId;
     }
 }
 
@@ -39,10 +40,10 @@ export class HttpError extends CustomError {
  * @extends {CustomError}
  */
 export class ConnectorError extends CustomError {
-    constructor(message, request, uuid) {
-        super(message);
+    constructor(message, context, requestUrl, requestId) {
+        super(message, context);
         this.name = 'ConnectorError';
-        this.request = request;
-        this.uuid = uuid;
+        this.requestUrl = requestUrl;
+        this.requestId = requestId;
     }
 }

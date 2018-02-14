@@ -17,7 +17,6 @@ variables:
             - node_modules/
         policy: pull
 
-
 install:modules:
     stage: setup
     cache:

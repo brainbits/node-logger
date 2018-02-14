@@ -41,7 +41,7 @@ function isString(value) {
  * @returns {boolean}
  */
 function isError(value) {
-  return getType(value) === 'Error';
+  return getType(value) === 'Error' || value instanceof Error;
 }
 
 /**
