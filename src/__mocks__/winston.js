@@ -5,9 +5,10 @@ class Console {
 }
 
 export const createLogger = jest.fn(() => ({
-    log: (level, message) => ({
+    log: (level, message, metadata) => ({
         level,
         message,
+        metadata,
     }),
 }));
 

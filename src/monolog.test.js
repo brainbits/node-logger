@@ -77,7 +77,7 @@ describe('monolog function', () => {
     });
 
     it('should handle the custom error HttpError properly', () => {
-        const error = new HttpError('Not authorized', {}, 'GET http://rest/api/resource', '401', '1234-1234-1234');
+        const error = new HttpError('Not authorized', null, 'GET http://rest/api/resource', '401', '1234-1234-1234');
         const info = {
             message: error,
             level: 'info',
@@ -88,14 +88,14 @@ describe('monolog function', () => {
     });
 
     it('should handle the custom error ConnectorError properly', () => {
-        const error = new ConnectorError('Fetch failed', 'GET http://rest/api/resource', '1234-1234-1234');
+        const error = new ConnectorError('Fetch failed', null, 'GET http://rest/api/resource', '1234-1234-1234');
         const info = {
             message: error,
             level: 'info',
         };
         const received = monologger(info);
         expect(received)
-            .toEqual('[2010-01-31 23:59:59] channel.ERROR: ConnectorError - Fetch failed [] {"requestUrl":"1234-1234-1234"}');
+            .toEqual('[2010-01-31 23:59:59] channel.ERROR: ConnectorError - Fetch failed [] {"requestUrl":"GET http://rest/api/resource","requestId":"1234-1234-1234"}');
     });
 
     it('should handle any unknown error (extends custom error) properly', () => {
@@ -123,6 +123,21 @@ describe('monolog function', () => {
         const received = monologger(info);
         expect(received)
             .toEqual('[2010-01-31 23:59:59] channel.ERROR: Error - This is a message [] {"locations":[{"line":16,"column":5}]}');
+    });
+
+    it('should handle unknown error types with metadata', () => {
+        const message = 'Here are some metadata';
+        const error = new Error(`${message}`);
+        const info = {
+            message: error,
+            level: 'error',
+            metadata: {
+                file: 'src/monolog.js:16:5',
+            },
+        };
+        const received = monologger(info);
+        expect(received)
+            .toEqual('[2010-01-31 23:59:59] channel.ERROR: Error - Here are some metadata {"metadata.context":{"file":"src/monolog.js:16:5"}} []');
     });
 
     it('should handle other variable types', () => {

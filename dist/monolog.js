@@ -33,6 +33,11 @@ function stringifyExtras(object) {
     return '[]';
 }
 
+/**
+ * @description parse message of an error or object
+ * @param {object} object Object to parse
+ * @returns {object} An object with message, context and extras
+ */
 function parseObject(object) {
     const {
         message, context, name } = object,
@@ -45,8 +50,17 @@ function parseObject(object) {
     };
 }
 
-function formatMonologMessage(channel, level, logData) {
-    const context = stringifyExtras(logData.context);
+/**
+ * @description Generate the monolog string
+ * @param {string} channel Channel of the logger
+ * @param {string} level Level of the logger
+ * @param {object} logData Data from our object with message, context and extras
+ * @returns {string} Monolog string
+ */
+function formatMonologMessage(channel, level, logData, metaData) {
+    const context = stringifyExtras(_extends({}, logData.context, {
+        'metadata.context': metaData
+    }));
     const extras = stringifyExtras(logData.extras);
 
     // Monolog format: "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n"
@@ -54,13 +68,15 @@ function formatMonologMessage(channel, level, logData) {
 }
 
 /**
- * @description Monolog formatter for winston
- * @param {object}
- * @returns
+ * @description Formatter function
+ * @export
+ * @param {string} channel Channel of the logger
+ * @returns {function} formatter function for winston logger
  */
 function monolog(channel) {
     return _winston.format.printf(info => {
         let level = info.level.toUpperCase();
+        const metaData = info.metadata;
         let logData = {
             message: null,
             context: [],
@@ -83,6 +99,6 @@ function monolog(channel) {
                 break;
         }
 
-        return formatMonologMessage(channel, level, logData);
+        return formatMonologMessage(channel, level, logData, metaData);
     });
 }
