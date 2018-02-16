@@ -6,7 +6,16 @@ Object {
   "CustomError": [Function],
   "HttpError": [Function],
   "logger": Object {
-    "log": [Function],
+    "alert": [Function],
+    "critical": [Function],
+    "debug": [Function],
+    "emergency": [Function],
+    "error": [Function],
+    "info": [Function],
+    "notice": [Function],
+    "start": [Function],
+    "stop": [Function],
+    "warning": [Function],
   },
 }
 `;

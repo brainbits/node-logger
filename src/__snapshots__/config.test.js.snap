@@ -1,0 +1,14 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Config should have the correct levels 1`] = `
+Object {
+  "alert": 1,
+  "critical": 2,
+  "debug": 7,
+  "emergency": 0,
+  "error": 3,
+  "info": 6,
+  "notice": 5,
+  "warning": 4,
+}
+`;

@@ -1,6 +1,6 @@
 {
     "name": "@tspm/node-logger",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "description": "Logger for node projects",
     "main": "dist/index.js",
     "scripts": {
@@ -66,8 +66,7 @@
     "license": "MIT",
     "dependencies": {
         "date-fns": "^1.29.0",
-        "jest-get-type": "^22.1.0",
-        "winston": "^3.0.0-rc1"
+        "jest-get-type": "^22.1.0"
     },
     "devDependencies": {
         "babel-cli": "^6.26.0",

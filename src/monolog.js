@@ -1,4 +1,3 @@
-import { format } from 'winston';
 import getType from 'jest-get-type';
 import { timestamp, isNonEmptyObject } from './utils';
 
@@ -39,15 +38,15 @@ function parseObject(object) {
  * @param {object} logData Data from our object with message, context and extras
  * @returns {string} Monolog string
  */
-function formatMonologMessage(channel, level, logData, metaData) {
+function formatMonologMessage(channel, level, logData, meta) {
     const context = stringifyExtras({
         ...logData.context,
-        'metadata.context': metaData,
+        'meta.context': meta,
     });
     const extras = stringifyExtras(logData.extras);
 
     // Monolog format: "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n"
-    return `[${timestamp()}] ${channel}.${level}: ${logData.message || '-'} ${context} ${extras}`;
+    return `[${timestamp()}] ${channel}.${level.toUpperCase()}: ${logData.message || '-'} ${context} ${extras}`;
 }
 
 /**
@@ -56,32 +55,24 @@ function formatMonologMessage(channel, level, logData, metaData) {
  * @param {string} channel Channel of the logger
  * @returns {function} formatter function for winston logger
  */
-export default function monolog(channel) {
-    return format.printf((info) => {
-        let level = info.level.toUpperCase();
-        const metaData = info.metadata;
-        let logData = {
-            message: null,
-            context: [],
-            extra: [],
-        };
+export default function monolog(channel, level, message, meta) {
+    let logData = {
+        message: null,
+        context: [],
+        extra: [],
+    };
 
-        if (info.message instanceof Error) {
-            level = 'ERROR';
-        }
+    switch (getType(message)) {
+        case 'object':
+            logData = parseObject(message);
+            break;
+        case 'array':
+            logData = { ...logData, message: message.join(' ') };
+            break;
+        default:
+            logData = { ...logData, message };
+            break;
+    }
 
-        switch (getType(info.message)) {
-            case 'object':
-                logData = parseObject(info.message);
-                break;
-            case 'array':
-                logData = { ...logData, message: info.message.join(' ') };
-                break;
-            default:
-                logData = { ...logData, message: info.message };
-                break;
-        }
-
-        return formatMonologMessage(channel, level, logData, metaData);
-    });
+    return formatMonologMessage(channel, level, logData, meta);
 }
