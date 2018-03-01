@@ -23,7 +23,7 @@ function write(string, level) {
 
     const output = config.outputs[outputLevel];
 
-    if (output.isTTY) {
+    if (output.writable) {
         output.write(`${string}\n`);
     }
 }

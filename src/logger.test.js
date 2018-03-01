@@ -74,6 +74,10 @@ describe('Logger', () => {
     });
 
     it('should check if output is a stream', () => {
-
+        process.stdout.writable = undefined;
+        const instance = createLogger();
+        instance.info('No stream at all');
+        expect(spy.stdout).not.toHaveBeenCalled();
+        process.stdout.writable = true;
     });
 });

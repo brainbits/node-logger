@@ -8,7 +8,7 @@ image: node:alpine
 variables:
     GIT_STRATEGY: fetch
 
-.cache:modules: &cache
+.cache:modules: &cache-node-modules
     retry: 1
     cache:
         key: node_modules
@@ -25,21 +25,21 @@ install:modules:
     script: yarn install
 
 test:lint:
-    <<: *cache
+    <<: *cache-node-modules
     dependencies:
         - install:modules
     stage: test
     script: yarn lint
 
 test:test:
-    <<: *cache
+    <<: *cache-node-modules
     dependencies:
         - install:modules
     stage: test
     script: yarn test
 
 build:package:
-    <<: *cache
+    <<: *cache-node-modules
     dependencies:
         - install:modules
     stage: build
