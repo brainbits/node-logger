@@ -34,7 +34,7 @@ function write(string, level) {
 
     const output = _config2.default.outputs[outputLevel];
 
-    if (output.isTTY) {
+    if (output.writable) {
         output.write(`${string}\n`);
     }
 }
