@@ -9,9 +9,9 @@
     "scripts": {
         "build:watch": "npm run build -- --watch --source-maps",
         "build": "babel src --out-dir ./dist --ignore test.js,setupTests.js,__mocks__/*",
-        "coverage": "jest --coverage",
+        "coverage": "npm test -- --coverage",
         "lint": "eslint ./src",
-        "test:watch": "jest --watch",
+        "test:watch": "npm test -- --watch",
         "test": "jest"
     },
     "babel": {

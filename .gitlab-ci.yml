@@ -2,7 +2,6 @@ stages:
 - setup
 - test
 - build
-- release
 
 image: node:alpine
 
@@ -12,7 +11,7 @@ variables:
 .cache:modules: &cache
     retry: 1
     cache:
-        key: modules
+        key: node_modules
         paths:
             - node_modules/
         policy: pull
@@ -37,7 +36,7 @@ test:test:
     dependencies:
         - install:modules
     stage: test
-    script: yarn test --forceExit
+    script: yarn test
 
 build:package:
     <<: *cache
@@ -45,17 +44,3 @@ build:package:
         - install:modules
     stage: build
     script: yarn build
-
-release:package:
-    dependencies:
-        - build:package
-    stage: release
-    artifacts:
-        paths:
-            - ./*.tgz
-    script:
-        - rm -rf ./node_modules
-        - rm -r ./dist/*.js.map
-        - yarn pack
-    only:
-        - master
