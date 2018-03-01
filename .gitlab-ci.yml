@@ -1,5 +1,4 @@
 stages:
-- setup
 - test
 - build
 
@@ -8,39 +7,17 @@ image: node:alpine
 variables:
     GIT_STRATEGY: fetch
 
-.cache:modules: &cache-node-modules
-    retry: 1
-    cache:
-        key: node_modules
-        paths:
-            - node_modules/
-        policy: pull
-
-install:modules:
-    stage: setup
-    cache:
-        key: modules
-        paths:
-            - node_modules/
-    script: yarn install
+before_script:
+    -  yarn install
 
 test:lint:
-    <<: *cache-node-modules
-    dependencies:
-        - install:modules
     stage: test
     script: yarn lint
 
 test:test:
-    <<: *cache-node-modules
-    dependencies:
-        - install:modules
     stage: test
     script: yarn test
 
 build:package:
-    <<: *cache-node-modules
-    dependencies:
-        - install:modules
     stage: build
     script: yarn build
