@@ -1,4 +1,4 @@
-# Logger v0.2.1
+# Logger
 ## Installation
 `yarn add @tspm/node-logger`
 
@@ -16,7 +16,7 @@ const meta = {
 };
 
 logger.info('This is my message', meta);
-// Will output: [2010-01-31 23:59:59] <your_npm_package_name>.INFO: This is my message {"meta.context":{"foo":"bar"}} []
+// Will output: [2010-01-31 23:59:59] <your_npm_package_name>.INFO: This is my message {"foo":"bar"} []
 ```
 ### Own logger
 ```javascript
@@ -34,7 +34,7 @@ const meta = {
 };
 
 logger.info('This is my message', meta);
-// Could output: [2010-01-31 23:59:59] myFancyChannel.INFO: This is my message {"meta.context":{"foo":"bar"}} []
+// Could output: [2010-01-31 23:59:59] myFancyChannel.INFO: This is my message {"foo":"bar"} []
 ```
 
 ### Timer function
@@ -57,7 +57,7 @@ function loadAsyncShit() {
             return result;
         };
 };
-// Could output: [2010-01-31 23:59:59] <your_npm_package_name>.DEBUG: timer {"meta.context":{"foo":"bar","timeMs":75}} []
+// Could output: [2010-01-31 23:59:59] <your_npm_package_name>.DEBUG: timer {"foo":"bar","timeMs":75} []
 ```
 ## Anatomy
 `logger.<level>(<message>, <meta>)`
@@ -78,4 +78,18 @@ Pick one of these levels:
 Message can be a `string`, `array` or `object` (and `Error` object)
 
 ### Meta `<meta>`
-Must be an object. Used for additional context data
+Must be an object. Used for additional context data.
+
+```javascript
+logger.info('This is my message', { foo: 'bar' });
+```
+
+will output:
+
+```
+[2010-01-31 23:59:59] myFancyChannel.INFO: This is my message {"foo":"bar"} []
+```
+
+Caution: If message is an object and meta has the same property, meta will override this property.
+
+
