@@ -40,5 +40,5 @@ release:package:
     script:
         - npm config set registry http:$NPM_REGISTRY
         - echo "${NPM_REGISTRY}:_authToken=${NPM_TOKEN}">.npmrc
-        - npm --no-git-tag-version version $CI_COMMIT_TAG
+        - npm --no-git-tag-version --allow-same-version version $CI_COMMIT_TAG
         - npm publish
