@@ -77,7 +77,7 @@ describe('monolog function', () => {
             file: 'src/monolog.js:16:5',
         };
         expect(monolog('tests', 'error', error, meta))
-            .toEqual('[2010-01-31 23:59:59] tests.ERROR: Error - Here are some metadata {"meta.context":{"file":"src/monolog.js:16:5"}} []');
+            .toEqual('[2010-01-31 23:59:59] tests.ERROR: Error - Here are some metadata {"file":"src/monolog.js:16:5"} []');
     });
 
     it('should handle other variable types', () => {

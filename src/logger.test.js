@@ -5,7 +5,7 @@ import config from './config';
 jest.mock('date-fns');
 format.mockReturnValue('2010-01-31 23:59:59');
 
-const spy = {
+const processSpy = {
     stdout: jest.spyOn(process.stdout, 'write'),
     stderr: jest.spyOn(process.stderr, 'write'),
 };
@@ -17,8 +17,8 @@ describe('Logger', () => {
 
     afterEach(() => {
         process.hrtime.mockRestore();
-        spy.stdout.mockClear();
-        spy.stderr.mockClear();
+        processSpy.stdout.mockClear();
+        processSpy.stderr.mockClear();
     });
 
     it('should return default logger correct methods', () => {
@@ -36,14 +36,14 @@ describe('Logger', () => {
         process.hrtime.mockReturnValue([5, 600000]);
         logger.stop('timer', { foo: 'bar' });
 
-        expect(spy.stdout)
-            .toHaveBeenCalledWith('[2010-01-31 23:59:59] tests.DEBUG: timer {"meta.context":{"foo":"bar","timeMs":5001}} []\n');
+        expect(processSpy.stdout)
+            .toHaveBeenCalledWith('[2010-01-31 23:59:59] tests.DEBUG: timer {"foo":"bar","timeMs":5001} []\n');
     });
 
     it('should return timer result null if there was no message set', () => {
         logger.stop('timerShouldBeNull');
-        expect(spy.stdout)
-            .toHaveBeenCalledWith('[2010-01-31 23:59:59] tests.DEBUG: timerShouldBeNull {"meta.context":{"timeMs":null}} []\n');
+        expect(processSpy.stdout)
+            .toHaveBeenCalledWith('[2010-01-31 23:59:59] tests.DEBUG: timerShouldBeNull {"timeMs":null} []\n');
     });
 
     it('should behave properly if max logging level set to another level', () => {
@@ -57,27 +57,27 @@ describe('Logger', () => {
         instance.notice('show notice to me');
         instance.alert('show alert to me');
 
-        expect(spy.stdout).toHaveBeenCalledTimes(1);
-        expect(spy.stderr).toHaveBeenCalledTimes(1);
-        expect(spy.stdout).toHaveBeenCalledWith('[2010-01-31 23:59:59] noticeChannel.NOTICE: show notice to me [] []\n');
-        expect(spy.stderr).toHaveBeenCalledWith('[2010-01-31 23:59:59] noticeChannel.ALERT: show alert to me [] []\n');
-        expect(spy.stdout).not.toHaveBeenCalledWith('[2010-01-31 23:59:59] noticeChannel.INFO: hide debug to me [] []\n');
-        expect(spy.stdout).not.toHaveBeenCalledWith('[2010-01-31 23:59:59] noticeChannel.DEBUG: hide infos [][]\n');
+        expect(processSpy.stdout).toHaveBeenCalledTimes(1);
+        expect(processSpy.stderr).toHaveBeenCalledTimes(1);
+        expect(processSpy.stdout).toHaveBeenCalledWith('[2010-01-31 23:59:59] noticeChannel.NOTICE: show notice to me [] []\n');
+        expect(processSpy.stderr).toHaveBeenCalledWith('[2010-01-31 23:59:59] noticeChannel.ALERT: show alert to me [] []\n');
+        expect(processSpy.stdout).not.toHaveBeenCalledWith('[2010-01-31 23:59:59] noticeChannel.INFO: hide debug to me [] []\n');
+        expect(processSpy.stdout).not.toHaveBeenCalledWith('[2010-01-31 23:59:59] noticeChannel.DEBUG: hide infos [][]\n');
     });
 
     it('should take default as fallback if createLogger was invoked without options', () => {
         const instance = createLogger();
         instance.info('Yes, yes');
         instance.debug('No, no');
-        expect(spy.stdout).toHaveBeenCalledWith('[2010-01-31 23:59:59] @tspm/node-logger.INFO: Yes, yes [] []\n');
-        expect(spy.stdout).not.toHaveBeenCalledWith('[2010-01-31 23:59:59] @tspm/node-logger.DEBUG: No, No [] []\n');
+        expect(processSpy.stdout).toHaveBeenCalledWith('[2010-01-31 23:59:59] @tspm/node-logger.INFO: Yes, yes [] []\n');
+        expect(processSpy.stdout).not.toHaveBeenCalledWith('[2010-01-31 23:59:59] @tspm/node-logger.DEBUG: No, No [] []\n');
     });
 
     it('should check if output is a stream', () => {
         process.stdout.writable = undefined;
         const instance = createLogger();
         instance.info('No stream at all');
-        expect(spy.stdout).not.toHaveBeenCalled();
+        expect(processSpy.stdout).not.toHaveBeenCalled();
         process.stdout.writable = true;
     });
 });

@@ -7,11 +7,7 @@ import { timestamp, isNonEmptyObject } from './utils';
  * @returns {string} The result as a string
  */
 function stringifyExtras(object) {
-    const json = isNonEmptyObject(object) ? JSON.stringify(object) : '{}';
-    if (json !== '{}') {
-        return json;
-    }
-    return '[]';
+    return isNonEmptyObject(object) ? JSON.stringify(object) : '[]';
 }
 
 /**
@@ -19,11 +15,12 @@ function stringifyExtras(object) {
  * @param {object} object Object to parse
  * @returns {object} An object with message, context and extras
  */
-function parseObject(object) {
-    const {
-        message, context, name, ...extras
-    } = object;
-
+function parseObject({
+    message,
+    context,
+    name,
+    ...extras
+}) {
     return {
         message: name ? `${name} - ${message || '-'}` : message,
         context,
@@ -36,23 +33,28 @@ function parseObject(object) {
  * @param {string} channel Channel of the logger
  * @param {string} level Level of the logger
  * @param {object} logData Data from our object with message, context and extras
+ * @param {object} meta Some meta information for context
  * @returns {string} Monolog string
  */
-function formatMonologMessage(channel, level, logData, meta) {
+function formatMonologMessage(channel, level, logData, meta = {}) {
+    const format = 'YYYY-MM-DD HH:mm:ss';
     const context = stringifyExtras({
         ...logData.context,
-        'meta.context': meta,
+        ...meta,
     });
     const extras = stringifyExtras(logData.extras);
 
     // Monolog format: "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n"
-    return `[${timestamp()}] ${channel}.${level.toUpperCase()}: ${logData.message || '-'} ${context} ${extras}`;
+    return `[${timestamp(format)}] ${channel}.${level.toUpperCase()}: ${logData.message || '-'} ${context} ${extras}`;
 }
 
 /**
  * @description Formatter function
  * @export
  * @param {string} channel Channel of the logger
+ * @param {string} level Level of the logger
+ * @param {*} message Message
+ * @param {object} meta Some meta information for context
  * @returns {function} formatter function for winston logger
  */
 export default function monolog(channel, level, message, meta) {
