@@ -12,10 +12,7 @@
         "lint": "eslint ./src",
         "coverage": "npm test -- --coverage",
         "test:watch": "npm test -- --watch",
-        "test": "jest",
-        "preversion": "npm test",
-        "version": "npm run build && git add package.json",
-        "postversion": "git push && git push --tags"
+        "test": "jest"
     },
     "babel": {
         "presets": [
