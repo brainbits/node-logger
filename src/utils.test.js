@@ -1,15 +1,31 @@
 import { timestamp, isNonEmptyObject } from './utils';
 
 describe('Utility functions', () => {
-    it('should have a timestamp function which returns the correct date format', () => {
-        expect(timestamp()).toMatch(/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}/);
+    describe('timestamp()', () => {
+        it('should return the correct date for monolog', () => {
+            expect(timestamp('YYYY-MM-DD HH:mm:ss')).toMatch(/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/);
+        });
+
+        it('should return the correct date', () => {
+            expect(timestamp('YYYY-MM-DD')).toMatch(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
+        });
     });
-    it('should behave...', () => {
-        const emptyObject = {};
-        const filledObject = {
-            foo: 'bar',
-        };
-        expect(isNonEmptyObject(emptyObject)).toBe(false);
-        expect(isNonEmptyObject(filledObject)).toBe(true);
+
+    describe('isNonEmptyObject()', () => {
+        it('should return false for a non empty object', () => {
+            expect(isNonEmptyObject({})).toBe(false);
+        });
+
+        it('should return true for an empty object', () => {
+            expect(isNonEmptyObject({
+                foo: 'bar',
+            })).toBe(true);
+        });
+
+        it('should return false for an object with only undefined properties', () => {
+            expect(isNonEmptyObject({
+                foo: undefined,
+            })).toBe(false);
+        });
     });
 });
