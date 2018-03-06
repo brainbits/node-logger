@@ -24,8 +24,8 @@ export class CustomError extends Error {
  * @extends {CustomError}
  */
 export class HttpError extends CustomError {
-    constructor(message, context, requestUrl, statusCode, requestId) {
-        super(message, context);
+    constructor(message, context, requestUrl, statusCode, requestId, origin) {
+        super(message, context, origin);
         this.name = 'HttpError';
         this.statusCode = statusCode;
         this.requestUrl = requestUrl;
@@ -40,8 +40,8 @@ export class HttpError extends CustomError {
  * @extends {CustomError}
  */
 export class ConnectorError extends CustomError {
-    constructor(message, context, requestUrl, requestId) {
-        super(message, context);
+    constructor(message, context, requestUrl, requestId, origin) {
+        super(message, context, origin);
         this.name = 'ConnectorError';
         this.requestUrl = requestUrl;
         this.requestId = requestId;
