@@ -11,23 +11,23 @@ variables:
 
 setup:modules:
     stage: setup
-    script: yarn install
+    script: npm ci
     artifacts:
         paths:
-            - node_modules
+            - $HOME/.npm
         expire_in: 1 hour
 
 test:lint:
     stage: test
-    script: yarn lint
+    script: npm run lint
 
 test:test:
     stage: test
-    script: yarn test
+    script: npm run test
 
 build:package:
     stage: build
-    script: yarn build
+    script: npm run build
     artifacts:
         paths:
             - dist
