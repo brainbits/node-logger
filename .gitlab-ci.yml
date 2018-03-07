@@ -11,10 +11,10 @@ variables:
 
 setup:modules:
     stage: setup
-    script: npm ci
+    script: npm install
     artifacts:
         paths:
-            - $HOME/.npm
+            - node_modules
         expire_in: 1 hour
 
 test:lint:
