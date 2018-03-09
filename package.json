@@ -1,15 +1,18 @@
 {
-    "name": "logger",
-    "version": "0.0.1",
+    "name": "@tspm/node-logger",
+    "version": "1.0.3",
     "description": "Logger for node projects",
-    "main": "index.js",
+    "publishConfig": {
+        "registry": "http://npm.int-vm-rancher-host2.brainbits-gmbh.local"
+    },
+    "main": "dist/index.js",
     "scripts": {
-        "build:watch": "npx babel src --out-dir ./dist --source-maps --watch --ignore test.js,setupTests.js",
-        "build": "npx babel src --out-dir ./dist --ignore test.js,setupTests.js,__mocks__/*",
-        "coverage": "NODE_ENV=test jest --coverage",
+        "build:watch": "npm run build -- --watch --source-maps",
+        "build": "babel src --out-dir ./dist --ignore test.js,setupTests.js,__mocks__/*",
         "lint": "eslint ./src",
-        "test:watch": "NODE_ENV=test jest --watch",
-        "test": "NODE_ENV=test jest"
+        "coverage": "npm test -- --coverage",
+        "test:watch": "npm test -- --watch",
+        "test": "jest"
     },
     "babel": {
         "presets": [
@@ -23,13 +26,7 @@
             ]
         ],
         "plugins": [
-            [
-                "transform-object-rest-spread",
-                {
-                    "useBuiltIns": true
-                }
-            ],
-            "babel-plugin-inline-import"
+            "transform-object-rest-spread"
         ]
     },
     "eslintConfig": {
@@ -71,20 +68,21 @@
     "author": "Brainbits <moriarty@brainbits.net>",
     "license": "MIT",
     "dependencies": {
-        "babel-cli": "^6.26.0",
-        "babel-core": "^6.26.0",
-        "babel-plugin-inline-import": "^2.0.6",
-        "babel-plugin-transform-object-rest-spread": "^6.26.0",
-        "babel-preset-env": "^1.6.1",
         "date-fns": "^1.29.0",
-        "winston": "^3.0.0-rc1"
+        "jest-get-type": "^22.1.0"
     },
     "devDependencies": {
+        "babel-cli": "^6.26.0",
+        "babel-core": "^6.26.0",
         "babel-eslint": "^8.2.1",
+        "babel-jest": "^22.2.0",
+        "babel-plugin-transform-object-rest-spread": "^6.26.0",
+        "babel-preset-env": "^1.6.1",
         "eslint": "^4.17.0",
         "eslint-config-brainbits": "^0.4.2",
         "eslint-config-brainbits-jest": "^0.4.2",
         "eslint-plugin-import": "^2.8.0",
-        "eslint-plugin-jest": "^21.7.0"
+        "eslint-plugin-jest": "^21.7.0",
+        "jest": "^22.2.1"
     }
 }
