@@ -19,11 +19,27 @@ function parseObject({
     message,
     context,
     name,
+    stack = [],
     ...extras
 }) {
+    let stackTrace = stack;
+    let contextObject = context;
+
+    if (!Array.isArray(stackTrace)) {
+        stackTrace = stackTrace
+            .split('\n')
+            .slice(1, 11)
+            .map(line => line.trim())
+            .filter(line => !!line);
+    }
+
+    if (stackTrace.length) {
+        contextObject = { ...contextObject, stackTrace };
+    }
+
     return {
         message: name ? `${name} - ${message || '-'}` : message,
-        context,
+        context: contextObject,
         extras,
     };
 }
