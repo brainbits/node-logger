@@ -37,7 +37,28 @@ logger.info('This is my message', meta);
 // Could output: [2010-01-31 23:59:59] myFancyChannel.INFO: This is my message {"foo":"bar"} []
 ```
 
-### Timer function
+### Environment variables
+
+Use `LOGGER_MAX_LEVEL` as enironment variable to set the debug level higher or lower (See Levels below)
+
+Example to set to MAXIMUM VERBOSITY:
+```bash
+$ export LOGGER_MAX_LEVEL=debug
+```
+
+Use `LOGGER_CHANNEL` to set the channel name for your project
+
+```bash
+$ export LOGGER_CHANNEL=myfancy-channel
+```
+
+will output
+
+```bash
+[2010-01-31 23:59:59] myfancy-channel.INFO: This is my message [] []
+```
+
+### Timer feature
 There is a timer function `logger.start(<name>)`
 ```javascript
 import { logger } from '@tspm/node-logger';
@@ -91,5 +112,3 @@ will output:
 ```
 
 Caution: If message is an object and meta has the same property, meta will override this property.
-
-
