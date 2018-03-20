@@ -19,11 +19,36 @@ function parseObject({
     message,
     context,
     name,
+    stack = [],
     ...extras
 }) {
+    let stackTrace = stack;
+    let contextObject = context;
+
+    if (!Array.isArray(stackTrace)) {
+        stackTrace = stackTrace
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => !!line);
+    }
+
+    if (stackTrace.length) {
+        const linesToCut = 11;
+        const truncatedLines = stackTrace.length - linesToCut;
+
+        stackTrace = stackTrace
+            .slice(1, linesToCut);
+
+        if (truncatedLines > 0) {
+            stackTrace.push(`${truncatedLines} more line${truncatedLines <= 1 ? '' : 's'} ...`);
+        }
+
+        contextObject = { ...contextObject, stackTrace };
+    }
+
     return {
         message: name ? `${name} - ${message || '-'}` : message,
-        context,
+        context: contextObject,
         extras,
     };
 }
