@@ -28,12 +28,21 @@ function parseObject({
     if (!Array.isArray(stackTrace)) {
         stackTrace = stackTrace
             .split('\n')
-            .slice(1, 11)
             .map(line => line.trim())
             .filter(line => !!line);
     }
 
     if (stackTrace.length) {
+        const linesToCut = 11;
+        const truncatedLines = stackTrace.length - linesToCut;
+
+        stackTrace = stackTrace
+            .slice(1, linesToCut);
+
+        if (truncatedLines > 0) {
+            stackTrace.push(`${truncatedLines} more line${truncatedLines <= 1 ? '' : 's'} ...`);
+        }
+
         contextObject = { ...contextObject, stackTrace };
     }
 
