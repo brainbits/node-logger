@@ -1,0 +1,45 @@
+{
+    "name": "test-module",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "babel src --out-dir ./dist --ignore test.js,setupTests.js,__mocks__/*; node ./dist/index.js"
+    },
+    "author": "",
+    "license": "ISC",
+    "nodeLogger": {
+        "maxLevel": "env(LOGGER_LEVEL, debug)",
+        "sentry": {
+            "exceptionLevel": "env(EXCEPTION_LEVEL, error)"
+        },
+        "plugins": [
+            "@tspm/node-logger-plugin-sentry"
+        ],
+        "formatter": "@tspm/node-logger-formatter-monolog"
+    },
+    "babel": {
+        "presets": [
+            [
+                "@babel/preset-env",
+                {
+                    "targets": {
+                        "node": "current"
+                    }
+                }
+            ]
+        ]
+    },
+    "dependencies": {
+        "@tspm/node-logger": "file:../../packages/logger",
+        "@tspm/node-logger-formatter-monolog": "file:../../packages/formatter-monolog",
+        "@tspm/node-logger-plugin-sentry": "file:../../packages/plugin-sentry",
+        "node-fetch": "^2.3.0"
+    },
+    "devDependencies": {
+        "@babel/cli": "^7.2.3",
+        "@babel/core": "^7.3.4",
+        "@babel/preset-env": "^7.3.4"
+    }
+}

@@ -4,33 +4,36 @@ stages:
     - build
     - release
 
-image: node:alpine
+image: node:lts-alpine
 
 variables:
     GIT_STRATEGY: fetch
 
 setup:modules:
     stage: setup
-    script: npm install
+    script:
+        - npx lerna bootstrap
     artifacts:
+        name: "node_modules_$CI_COMMIT_REF_NAME"
         paths:
-            - node_modules
+            - packages/**/node_modules
         expire_in: 1 hour
 
 test:lint:
     stage: test
-    script: npm run lint
+    script: npx lerna run lint
 
 test:test:
     stage: test
-    script: npm run test
+    script: npx lerna run test
 
 build:package:
     stage: build
-    script: npm run build
+    script: npx lerna run build
     artifacts:
+        name: "dist_$CI_COMMIT_REF_NAME"
         paths:
-            - dist
+            - packages/**/dist
         expire_in: 1 hour
 
 release:package:
@@ -40,5 +43,4 @@ release:package:
     script:
         - npm config set registry http:$NPM_REGISTRY
         - echo "${NPM_REGISTRY}:_authToken=${NPM_TOKEN}">.npmrc
-        - npm --no-git-tag-version --allow-same-version version $CI_COMMIT_TAG
-        - npm publish
+        - lerna publish
