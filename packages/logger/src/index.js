@@ -1,60 +1,101 @@
 import Config from './config';
 
+// Export all error classes
+export * from './errors';
+
 /**
  * @description Logger class
  * @class Logger
  */
-class Logger {
+export default class Logger {
+    /**
+     * @description Map for the timer
+     * @memberof Logger
+     */
     timeMap = new Map();
+
+    /**
+     * @description Map for tags
+     * @memberof Logger
+     */
+    tagsMap = new Map();
+
     /**
      *Creates an instance of Logger.
      * @memberof Logger
      */
-    constructor(config, context) {
-        const configurator = new Config(config);
-        this.context = context;
-
+    constructor(context, config) {
         // Generate configuration object
-        this.config = configurator.generate();
+        const cfg = new Config(config);
+
+        this.config = cfg.generate();
+
+        const { levels, channel } = this.config;
 
         // Creates for all level methods
-        this.config.levels.forEach((level) => {
+        levels.forEach((level) => {
             this[level] = (message, meta) => {
-                if (this.isLevelSilent(level)) {
-                    return;
-                }
+                const event = {
+                    channel, //  1
+                    level, //    2
+                    message, //  3
+                    meta, //     4
+                };
 
-                const formattedString = this.config.formatter(
-                    this.config.channel,
-                    level,
-                    message,
-                    meta,
-                );
-
-                this.feedPlugins({
-                    channel: this.config.channel,
-                    context: this.context,
-                    level,
-                    message,
-                    meta,
+                this.logToPlugins({
+                    ...event,
+                    context,
+                    tags: this.tagsMap,
                 });
 
-                this.write(formattedString, level);
+                this.write(event, level);
             };
         });
     }
 
-    isLevelSilent(level) {
-        const { levels, maxLevel } = this.config;
-
-        return levels.indexOf(level) > levels.indexOf(maxLevel);
+    /**
+     * @description Adds a new tag to the tag map
+     * @param {*} key
+     * @param {*} value
+     * @memberof Logger
+     */
+    setTag(key, value) {
+        this.tagsMap.set(key, value);
     }
 
+    /**
+     * @description Removes a tag by its key
+     * @param {*} key
+     * @memberof Logger
+     */
+    deleteTag(key) {
+        this.tagsMap.delete(key);
+    }
+
+    /**
+     * @description Reset the entire tag map
+     * @memberof Logger
+     */
+    clearTags() {
+        this.tagsMap.clear();
+    }
+
+    /**
+     * @description Start the timer with a message as identifier
+     * @param {*} message
+     * @memberof Logger
+     */
     start(message) {
         this.timeMap.set(message, process.hrtime());
     }
 
-    stop(message, meta) {
+    /**
+     * @description Stops the timer with an existing message
+     * @param {*} message
+     * @param {*} meta
+     * @memberof Logger
+     */
+    stop(message, meta = {}) {
         let timeMs = null;
         if (this.timeMap.has(message)) {
             const [s, ns] = process.hrtime(this.timeMap.get(message));
@@ -64,10 +105,10 @@ class Logger {
     }
 
     /**
-     * @description Feeds the plugins with the feed object
+     * @description logs the plugins with the feed object
      * @memberof Logger
      */
-    feedPlugins(event) {
+    logToPlugins(event) {
         const { plugins } = this.config;
 
         plugins.forEach((plugin) => {
@@ -91,13 +132,29 @@ class Logger {
     }
 
     /**
+     * @description Checks if the level is allowed to write to our targets
+     * @param {*} level
+     * @returns {boolean}
+     * @memberof Logger
+     */
+    isLevelSilent(level) {
+        const { levels, maxLevel } = this.config;
+
+        return levels.indexOf(level) > levels.indexOf(maxLevel);
+    }
+
+    /**
      * @description Writes the content of an event to the output
-     * @param {string} string
+     * @param {object} event
      * @param {string} level
      * @memberof Logger
      */
-    write(string, level) {
-        const message = `${string}\n`;
+    write(event, level) {
+        if (this.isLevelSilent(level)) {
+            return;
+        }
+
+        const message = this.config.formatter(...Object.values(event));
         const outputLevel = this.outputLevel(level);
         const output = this.config.outputs[outputLevel];
 
@@ -108,9 +165,7 @@ class Logger {
         const target = process[output];
 
         if (target.writable) {
-            target.write(message);
+            target.write(`${message}\n`);
         }
     }
 }
-
-export default Logger;

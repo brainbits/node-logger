@@ -1,61 +1,76 @@
 import * as Sentry from '@sentry/node';
 
-const SENTRY_DSN = 'https://59a45aecaec3433e9412482ecfa60b90:c9294447311243ebac923d791448c3e5@sentry.brainbits.net/50';
-
-Sentry.init({
-    environment: 'dev',
-    dsn: SENTRY_DSN,
-    maxBreadcrumbs: 50,
-    debug: true,
-});
-
 class PluginSentry {
-    static addBreadcrumb(breadcrumb) {
-        Sentry.addBreadcrumb(breadcrumb);
+    defaults = {
+        debug: false,
+        dsn: '',
+        environment: 'dev',
+        maxBreadcrumbs: 50,
+        exceptionLevel: 'error',
+        breadcrumbLevels: [
+            'info',
+            'warning',
+            'debug',
+        ],
+    };
+
+    constructor(config) {
+        const { sentry } = config;
+
+        this.config = config;
+        this.sentry = Sentry;
+
+        this.sentry.init({
+            debug: sentry.debug || this.defaults.debug,
+            dsn: sentry.dsn || this.defaults.dsn,
+            environment: sentry.environment || this.defaults.environment,
+            maxBreadcrumbs: sentry.maxBreadcrumbs || this.defaults.maxBreadcrumbs,
+        });
     }
 
-    static captureMessage(message) {
-        Sentry.captureMessage(message);
-    }
+    isException(level) {
+        const { levels, sentry: { exceptionLevel } } = this.config;
 
-    static captureException(error) {
-        Sentry.captureException(error);
-    }
-
-    static withScope(scope) {
-        Sentry.withScope(scope);
+        return levels.indexOf(exceptionLevel) >= levels.indexOf(level);
     }
 
     log(event) {
         const {
-            isException, message, context, level,
+            message,
+            context,
+            level,
+            tags,
         } = event;
 
-        const {
-            addBreadcrumb,
-            captureException,
-            withScope,
-        } = this.constructor;
+        const breadcrumbLevels = this.config.sentry.breadcrumbLevels
+            || this.defaults.breadcrumbLevels;
 
-        withScope((scope) => {
-            scope.setTag('my-tag', 'my value');
-            scope.setLevel('warning');
-            // will be tagged with my-tag="my value"
-            captureException(new Error('my error'));
-        });
-
-        if (level === 'info') {
-            addBreadcrumb({
+        if (breadcrumbLevels.includes(level)) {
+            const breadcrumb = {
                 category: context,
                 message,
                 level,
-            });
+            };
+
+            this.sentry.addBreadcrumb(breadcrumb);
         }
 
-        if (isException) {
-            captureException(message);
+        if (this.isException(level)) {
+            if (tags.size >= 1) {
+                // See: https://docs.sentry.io/enriching-error-data/scopes/?platform=javascript
+                this.sentry.withScope((scope) => {
+                    tags.forEach((value, key) => {
+                        scope.setTag(key, value);
+                    });
+                    scope.setLevel(level);
+
+                    // Tagged version of caputureException
+                    this.sentry.captureException(message);
+                });
+            }
+            // Untagged version of caputureException
+            this.sentry.captureException(message);
         }
-        console.log(event);
     }
 }
 

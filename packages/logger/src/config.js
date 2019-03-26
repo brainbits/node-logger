@@ -38,7 +38,7 @@ class Config {
      * @param {*} overrideConfig
      * @memberof Config
      */
-    constructor(overrideConfig) {
+    constructor(overrideConfig = {}) {
         this.overrideConfig = overrideConfig;
         this.packageJsonContent = this.packageJson;
     }
@@ -96,19 +96,28 @@ class Config {
     }
 
     /**
+     * @description Returns the parsed configuration
+     * @readonly
+     * @memberof Config
+     */
+    get parsedConfig() {
+        return this.deepParseEnv(this.config);
+    }
+
+    /**
      * @description Gets the formatter and returns its function
      * @readonly
      * @memberof Config
      */
     get formatter() {
-        const { config } = this;
+        const { parsedConfig } = this;
 
-        if ((!('formatter' in config) && typeof config !== 'string') || config.formatter.length <= 1) {
+        if ((!('formatter' in parsedConfig) && typeof parsedConfig !== 'string') || parsedConfig.formatter.length <= 1) {
             throw new Error(`You must specify a formatter in your ${this.defaults.packageJson} (as a string)`);
         }
 
         try {
-            const formatterFunction = this.importModule(config.formatter);
+            const formatterFunction = this.importModule(parsedConfig.formatter);
 
             return formatterFunction;
         } catch (error) {
@@ -122,17 +131,17 @@ class Config {
      * @memberof Config
      */
     get plugins() {
-        const { config } = this;
+        const { parsedConfig } = this;
 
-        if ((!('plugins' in config) && Array.isArray(config.plugins)) || config.plugins.length < 1) {
+        if ((!('plugins' in parsedConfig) && Array.isArray(parsedConfig.plugins)) || parsedConfig.plugins.length < 1) {
             throw new Error(`You must specify plugins in your ${this.defaults.packageJson} (as array)`);
         }
 
         try {
-            const plugins = config.plugins.map((plugin) => {
+            const plugins = parsedConfig.plugins.map((plugin) => {
                 const Plugin = this.importModule(plugin);
 
-                return new Plugin();
+                return new Plugin(parsedConfig);
             });
 
             return plugins;
@@ -146,6 +155,7 @@ class Config {
      * @param {*} moduleName
      * @returns module
      * @memberof Config
+     * @private
      */
     importModule(moduleName) {
         try {
@@ -162,11 +172,12 @@ class Config {
     /**
      * @description Deep search and replace the config for environment variables
      * @memberof Config
+     * @private
      */
     deepParseEnv(config) {
         const parsedConfig = {};
 
-        if (Array.isArray(config)) {
+        if (Array.isArray(config) || typeof config === 'boolean') {
             return config;
         }
 
@@ -196,10 +207,8 @@ class Config {
      * @memberof Config
      */
     generate() {
-        const parsedConfig = this.deepParseEnv(this.config);
-
         return {
-            ...parsedConfig,
+            ...this.parsedConfig,
             plugins: this.plugins,
             formatter: this.formatter,
         };
