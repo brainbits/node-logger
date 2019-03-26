@@ -5,6 +5,7 @@ import Config from './config';
  * @class Logger
  */
 class Logger {
+    timeMap = new Map();
     /**
      *Creates an instance of Logger.
      * @memberof Logger
@@ -47,6 +48,19 @@ class Logger {
         const { levels, maxLevel } = this.config;
 
         return levels.indexOf(level) > levels.indexOf(maxLevel);
+    }
+
+    start(message) {
+        this.timeMap.set(message, process.hrtime());
+    }
+
+    stop(message, meta) {
+        let timeMs = null;
+        if (this.timeMap.has(message)) {
+            const [s, ns] = process.hrtime(this.timeMap.get(message));
+            timeMs = Math.round(((s * 1e9) + ns) * 1e-6);
+        }
+        this[this.config.timerLevel](message, { ...meta, timeMs });
     }
 
     /**

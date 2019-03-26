@@ -8,6 +8,8 @@ const urls = [
     'https://jsonplaceholder.typicode.com/posts/333'
 ];
 
+logger.start('Fetch');
+
 async function goGetIt(url) {
     try {
         const response = await fetch(url);
@@ -26,6 +28,8 @@ async function goGetIt(url) {
         return data;
     } catch (error) {
         logger.error(error);
+    } finally {
+        logger.stop('Fetch');
     }
 }
 

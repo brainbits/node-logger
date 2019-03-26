@@ -30,6 +30,7 @@ class Config {
             emergency: 'stderr',
             warning: 'stdout',
         },
+        timerLevel: 'debug',
     };
 
     /**
