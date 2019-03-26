@@ -15,8 +15,9 @@ async function goGetIt(url) {
     try {
         const response = await fetch(url);
 
-        logger.setTag('status', response.status);
-        logger.setTag('url', url);
+        logger.addTag('message', response.statusText);
+        logger.addTag('code', response.status);
+        logger.addTag('url', url);
 
         if (!response.ok) {
             throw new Error(`Fetch ${response.url} was unsuccessful. Reason: [${response.status} ${response.statusText}]`);

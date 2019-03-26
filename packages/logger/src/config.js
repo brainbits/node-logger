@@ -50,11 +50,11 @@ class Config {
      */
     get modulePaths() {
         const { paths } = this.mainModule;
-        const nodeModulePath = paths.find(current => fs.existsSync(current));
+        const nodeModules = paths.find(current => fs.existsSync(current));
 
         return {
-            nodeModules: nodeModulePath,
-            root: path.join(nodeModulePath, '..'),
+            nodeModules,
+            root: path.join(nodeModules, '..'),
         };
     }
 
@@ -112,8 +112,12 @@ class Config {
     get formatter() {
         const { parsedConfig } = this;
 
-        if ((!('formatter' in parsedConfig) && typeof parsedConfig !== 'string') || parsedConfig.formatter.length <= 1) {
-            throw new Error(`You must specify a formatter in your ${this.defaults.packageJson} (as a string)`);
+        if (!parsedConfig.formatter) {
+            throw new Error('No formatter found in configuration');
+        }
+
+        if (typeof parsedConfig.formatter === 'function') {
+            return parsedConfig.formatter;
         }
 
         try {
@@ -133,8 +137,8 @@ class Config {
     get plugins() {
         const { parsedConfig } = this;
 
-        if ((!('plugins' in parsedConfig) && Array.isArray(parsedConfig.plugins)) || parsedConfig.plugins.length < 1) {
-            throw new Error(`You must specify plugins in your ${this.defaults.packageJson} (as array)`);
+        if (!('plugins' in parsedConfig && Array.isArray(parsedConfig.plugins))) {
+            return null;
         }
 
         try {

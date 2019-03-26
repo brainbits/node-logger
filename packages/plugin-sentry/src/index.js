@@ -39,7 +39,7 @@ class PluginSentry {
             message,
             context,
             level,
-            tags,
+            tagsMap,
         } = event;
 
         const breadcrumbLevels = this.config.sentry.breadcrumbLevels
@@ -56,10 +56,10 @@ class PluginSentry {
         }
 
         if (this.isException(level)) {
-            if (tags.size >= 1) {
+            if (tagsMap.size >= 1) {
                 // See: https://docs.sentry.io/enriching-error-data/scopes/?platform=javascript
                 this.sentry.withScope((scope) => {
-                    tags.forEach((value, key) => {
+                    tagsMap.forEach((value, key) => {
                         scope.setTag(key, value);
                     });
                     scope.setLevel(level);

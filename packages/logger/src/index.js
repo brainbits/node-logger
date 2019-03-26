@@ -24,7 +24,7 @@ export default class Logger {
      *Creates an instance of Logger.
      * @memberof Logger
      */
-    constructor(context, config) {
+    constructor(context = '', config) {
         // Generate configuration object
         const cfg = new Config(config);
 
@@ -36,21 +36,32 @@ export default class Logger {
         levels.forEach((level) => {
             this[level] = (message, meta) => {
                 const event = {
-                    channel, //  1
-                    level, //    2
-                    message, //  3
-                    meta, //     4
+                    channel, // 1
+                    level, // 2
+                    message, // 3
+                    meta, // 4
+                    tags: this.tags, // 5
                 };
 
                 this.logToPlugins({
                     ...event,
                     context,
-                    tags: this.tagsMap,
+                    tagsMap: this.tagsMap,
                 });
 
                 this.write(event, level);
             };
         });
+    }
+
+    get tags() {
+        const map = {};
+
+        this.tagsMap.forEach((value, key) => {
+            map[key] = value;
+        });
+
+        return map;
     }
 
     /**
@@ -59,7 +70,7 @@ export default class Logger {
      * @param {*} value
      * @memberof Logger
      */
-    setTag(key, value) {
+    addTag(key, value) {
         this.tagsMap.set(key, value);
     }
 
@@ -68,9 +79,10 @@ export default class Logger {
      * @param {*} key
      * @memberof Logger
      */
-    deleteTag(key) {
+    removeTag(key) {
         this.tagsMap.delete(key);
     }
+
 
     /**
      * @description Reset the entire tag map
@@ -107,9 +119,14 @@ export default class Logger {
     /**
      * @description logs the plugins with the feed object
      * @memberof Logger
+     * @private
      */
     logToPlugins(event) {
         const { plugins } = this.config;
+
+        if (!plugins && !Array.isArray(plugins)) {
+            return;
+        }
 
         plugins.forEach((plugin) => {
             if ('log' in plugin) {
@@ -123,6 +140,7 @@ export default class Logger {
      * @param {*} level
      * @returns {string} outputLevel
      * @memberof Logger
+     * @private
      */
     outputLevel(level) {
         return this.config.levels
@@ -136,6 +154,7 @@ export default class Logger {
      * @param {*} level
      * @returns {boolean}
      * @memberof Logger
+     * @private
      */
     isLevelSilent(level) {
         const { levels, maxLevel } = this.config;
@@ -148,6 +167,7 @@ export default class Logger {
      * @param {object} event
      * @param {string} level
      * @memberof Logger
+     * @private
      */
     write(event, level) {
         if (this.isLevelSilent(level)) {

@@ -14,7 +14,7 @@
         "sentry": {
             "dsn": "https://59a45aecaec3433e9412482ecfa60b90:c9294447311243ebac923d791448c3e5@sentry.brainbits.net/50",
             "exceptionLevel": "env(EXCEPTION_LEVEL, error)",
-            "debug": true
+            "debug": false
         },
         "plugins": [
             "@tspm/node-logger-plugin-sentry"
