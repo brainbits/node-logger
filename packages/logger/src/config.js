@@ -25,7 +25,7 @@ class Config {
             'info', //      6
             'debug', //     7
         ],
-        maxLevel: 'error',
+        maxLevel: 'info',
         outputs: {
             emergency: 'stderr',
             warning: 'stdout',
