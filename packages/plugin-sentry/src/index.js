@@ -14,22 +14,28 @@ class PluginSentry {
         ],
     };
 
-    constructor(config) {
-        const { sentry } = config;
+    constructor(config = {}) {
+        const { sentry, ...rest } = config;
 
-        this.config = config;
+        // Merge configuration
+        this.config = {
+            ...this.defaults,
+            ...sentry,
+            ...rest,
+        };
+
         this.sentry = Sentry;
 
         this.sentry.init({
-            debug: sentry.debug || this.defaults.debug,
-            dsn: sentry.dsn || this.defaults.dsn,
-            environment: sentry.environment || this.defaults.environment,
-            maxBreadcrumbs: sentry.maxBreadcrumbs || this.defaults.maxBreadcrumbs,
+            debug: this.config.debug,
+            dsn: this.config.dsn,
+            environment: this.config.environment,
+            maxBreadcrumbs: this.config.maxBreadcrumbs,
         });
     }
 
     isException(level) {
-        const { levels, sentry: { exceptionLevel } } = this.config;
+        const { levels, exceptionLevel } = this.config;
 
         return levels.indexOf(exceptionLevel) >= levels.indexOf(level);
     }
@@ -42,8 +48,7 @@ class PluginSentry {
             tagsMap,
         } = event;
 
-        const breadcrumbLevels = this.config.sentry.breadcrumbLevels
-            || this.defaults.breadcrumbLevels;
+        const { breadcrumbLevels } = this.config;
 
         if (breadcrumbLevels.includes(level)) {
             const breadcrumb = {
@@ -56,18 +61,20 @@ class PluginSentry {
         }
 
         if (this.isException(level)) {
-            if (tagsMap.size >= 1) {
+            if (tagsMap instanceof Map && tagsMap.size >= 1) {
                 // See: https://docs.sentry.io/enriching-error-data/scopes/?platform=javascript
                 this.sentry.withScope((scope) => {
                     tagsMap.forEach((value, key) => {
                         scope.setTag(key, value);
                     });
+
                     scope.setLevel(level);
 
                     // Tagged version of caputureException
                     this.sentry.captureException(message);
                 });
             }
+
             // Untagged version of caputureException
             this.sentry.captureException(message);
         }
