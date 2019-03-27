@@ -52,7 +52,7 @@ describe('Config', () => {
             'defaults.outputs',
             { emergency: 'stderr', warning: 'stdout' },
         );
-        expect(config).toHaveProperty('defaults.maxLevel', 'error');
+        expect(config).toHaveProperty('defaults.maxLevel', 'info');
         expect(config).toHaveProperty('defaults.timerLevel', 'debug');
         expect(config).toHaveProperty('defaults.packageJson', 'package.json');
     });
@@ -64,7 +64,7 @@ describe('Config', () => {
             channel: 'testpackage',
             formatter: expect.any(Function),
             levels: ['error', 'info', 'debug'],
-            maxLevel: 'error',
+            maxLevel: 'info',
             outputs: { emergency: 'stderr', warning: 'stdout' },
             plugins: null,
             timerLevel: 'debug',
