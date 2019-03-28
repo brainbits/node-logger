@@ -102,7 +102,7 @@ function formatMonologMessage(channel, level, logData, meta = {}) {
  * @param {string} level Level of the logger
  * @param {*} message Message
  * @param {object} meta Some meta information for context
- * @returns {function} formatter function for winston logger
+ * @returns {function} formatter function for logger
  */
 export default function monolog(channel, level, message, meta) {
     let logData = {

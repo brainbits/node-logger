@@ -3,11 +3,6 @@ import Config from './config';
 
 jest.mock('fs');
 jest.mock('path');
-jest.mock('module', () => ({
-    createRequireFromPath: () => () => ({
-        default: () => { },
-    }),
-}));
 
 process.mainModule = {
     paths: [

@@ -1,6 +1,7 @@
+/* eslint-disable import/no-dynamic-require */
+/* eslint-disable global-require */
 import fs from 'fs';
 import path from 'path';
-import { createRequireFromPath } from 'module';
 
 class Config {
     /**
@@ -14,16 +15,15 @@ class Config {
      * @memberof Config
      */
     defaults = {
-        packageJson: 'package.json',
         levels: [
-            'emergency', // 0
-            'alert', //     1
-            'critical', //  2
-            'error', //     3
-            'warning', //   4
-            'notice', //    5
-            'info', //      6
-            'debug', //     7
+            'emergency',
+            'alert',
+            'critical',
+            'error',
+            'warning',
+            'notice',
+            'info',
+            'debug',
         ],
         maxLevel: 'info',
         outputs: {
@@ -65,14 +65,14 @@ class Config {
      */
     get packageJson() {
         try {
-            const { packageJson } = this.defaults;
             const { root } = this.modulePaths;
-            const pkgFile = path.join(root, packageJson);
+            const pkgFile = path.join(root, 'package.json');
 
             if (!fs.existsSync(pkgFile)) {
                 throw new Error(`File ${pkgFile} does not exist`);
             }
-            return JSON.parse(fs.readFileSync(`${root}/${packageJson}`, 'utf8'));
+
+            return require(`${root}/package.json`);
         } catch (error) {
             throw error;
         }
@@ -84,12 +84,11 @@ class Config {
      * @memberof Config
      */
     get config() {
-        const { packageJson, ...defaults } = this.defaults;
         const { name, nodeLogger } = this.packageJsonContent;
 
         return {
             channel: name || 'unknown',
-            ...defaults,
+            ...this.defaults,
             ...nodeLogger,
             ...this.overrideConfig,
         };
@@ -101,7 +100,11 @@ class Config {
      * @memberof Config
      */
     get parsedConfig() {
-        return this.deepParseEnv(this.config);
+        if (!this.parsedConfigCache) {
+            this.parsedConfigCache = this.deepParseEnv(this.config);
+        }
+
+        return this.parsedConfigCache;
     }
 
     /**
@@ -110,7 +113,7 @@ class Config {
      * @memberof Config
      */
     get formatter() {
-        const { parsedConfig } = this;
+        const { parsedConfig, modulePaths } = this;
 
         if (!parsedConfig.formatter) {
             throw new Error('No formatter found in configuration');
@@ -121,9 +124,7 @@ class Config {
         }
 
         try {
-            const formatterFunction = this.importModule(parsedConfig.formatter);
-
-            return formatterFunction;
+            return require(path.join(modulePaths.nodeModules, parsedConfig.formatter)).default;
         } catch (error) {
             throw error;
         }
@@ -135,7 +136,7 @@ class Config {
      * @memberof Config
      */
     get plugins() {
-        const { parsedConfig } = this;
+        const { parsedConfig, modulePaths } = this;
 
         if (!('plugins' in parsedConfig && Array.isArray(parsedConfig.plugins))) {
             return null;
@@ -143,31 +144,12 @@ class Config {
 
         try {
             const plugins = parsedConfig.plugins.map((plugin) => {
-                const Plugin = this.importModule(plugin);
+                const Plugin = require(path.join(modulePaths.nodeModules, plugin)).default;
 
                 return new Plugin(parsedConfig);
             });
 
             return plugins;
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    /**
-     * @description Imports a module dynamically from the root module
-     * @param {*} moduleName
-     * @returns module
-     * @memberof Config
-     * @private
-     */
-    importModule(moduleName) {
-        try {
-            const { nodeModules } = this.modulePaths;
-            const requireFromRoot = createRequireFromPath(nodeModules);
-            const loadedModule = requireFromRoot(moduleName).default;
-
-            return loadedModule;
         } catch (error) {
             throw error;
         }
@@ -192,6 +174,7 @@ class Config {
                 if (!process.env[match[1]] && !match[3]) {
                     throw new Error(`Env ${match[1]} is not set nor has a fallback!`);
                 }
+
                 return process.env[match[1]] || match[3];
             }
 

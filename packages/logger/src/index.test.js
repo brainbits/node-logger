@@ -30,9 +30,6 @@ describe('Logger', () => {
     const methods = [
         'start',
         'stop',
-        'addTag',
-        'removeTag',
-        'clearTags',
     ];
 
     beforeEach(() => {
@@ -47,7 +44,6 @@ describe('Logger', () => {
         expect(logger).toHaveProperty('config.levels', levels);
         expect(logger).toHaveProperty('config.formatter', expect.any(Function));
         expect(logger).toHaveProperty('config.plugins', expect.any(Array));
-        expect(logger).toHaveProperty('tagsMap', expect.any(Map));
         expect(logger).toHaveProperty('timeMap', expect.any(Map));
     });
 
@@ -64,9 +60,8 @@ describe('Logger', () => {
     it('should pass the correct objects to the output', () => {
         const logger = new Logger();
 
-        logger.addTag('tag', 'tagValue');
         logger.info('message', { meta: 'values' });
 
-        expect(stdout).toHaveBeenCalledWith('["test","info","message",{"meta":"values"},{"tag":"tagValue"}]\n');
+        expect(stdout).toHaveBeenCalledWith('["test","info","message",{"meta":"values"}]\n');
     });
 });

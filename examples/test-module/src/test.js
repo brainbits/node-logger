@@ -1,9 +1,8 @@
 import Logger, { HttpError } from '@tspm/node-logger';
 
-const logger = new Logger('test');
 
 export default function test() {
-    logger.addTag('key', 'test');
+    const logger = new Logger();
     logger.emergency(new Error('test'), { foo: 'bar' })
     logger.alert(new Error('test'), { foo: 'bar' })
     logger.critical(new HttpError('test'), { foo: 'bar' })

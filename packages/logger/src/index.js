@@ -15,17 +15,10 @@ export default class Logger {
     timeMap = new Map();
 
     /**
-     * @description Map for tags
-     * @memberof Logger
-     */
-    tagsMap = new Map();
-
-    /**
      *Creates an instance of Logger.
      * @memberof Logger
      */
-    constructor(context = '', config) {
-        // Generate configuration object
+    constructor(config) {
         const cfg = new Config(config);
 
         this.config = cfg.generate();
@@ -36,19 +29,13 @@ export default class Logger {
         levels.forEach((level) => {
             this[level] = (message, meta) => {
                 const event = {
-                    channel, // 1
-                    level, // 2
-                    message, // 3
-                    meta, // 4
-                    tags: this.tags, // 5
+                    channel,
+                    level,
+                    message,
+                    meta,
                 };
 
-                this.logToPlugins({
-                    ...event,
-                    context,
-                    tagsMap: this.tagsMap,
-                });
-
+                this.logToPlugins(event);
                 this.write(event, level);
             };
         });
@@ -62,34 +49,6 @@ export default class Logger {
         });
 
         return map;
-    }
-
-    /**
-     * @description Adds a new tag to the tag map
-     * @param {*} key
-     * @param {*} value
-     * @memberof Logger
-     */
-    addTag(key, value) {
-        this.tagsMap.set(key, value);
-    }
-
-    /**
-     * @description Removes a tag by its key
-     * @param {*} key
-     * @memberof Logger
-     */
-    removeTag(key) {
-        this.tagsMap.delete(key);
-    }
-
-
-    /**
-     * @description Reset the entire tag map
-     * @memberof Logger
-     */
-    clearTags() {
-        this.tagsMap.clear();
     }
 
     /**
