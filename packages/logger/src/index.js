@@ -1,4 +1,4 @@
-import Config from './config';
+import loadConfiguration from './config';
 
 // Export all error classes
 export * from './errors';
@@ -10,19 +10,14 @@ export * from './errors';
 export default class Logger {
     /**
      * @description Map for the timer
-     * @memberof Logger
      */
     timeMap = new Map();
 
     /**
-     *Creates an instance of Logger.
-     * @memberof Logger
+     * @description Creates an instance of Logger.
      */
-    constructor(config) {
-        const cfg = new Config(config);
-
-        this.config = cfg.generate();
-
+    constructor(config = {}) {
+        this.config = loadConfiguration(config);
         const { levels, channel } = this.config;
 
         // Creates for all level methods
@@ -36,25 +31,14 @@ export default class Logger {
                 };
 
                 this.logToPlugins(event);
-                this.write(event, level);
+                this.write(event);
             };
         });
-    }
-
-    get tags() {
-        const map = {};
-
-        this.tagsMap.forEach((value, key) => {
-            map[key] = value;
-        });
-
-        return map;
     }
 
     /**
      * @description Start the timer with a message as identifier
      * @param {*} message
-     * @memberof Logger
      */
     start(message) {
         this.timeMap.set(message, process.hrtime());
@@ -64,7 +48,6 @@ export default class Logger {
      * @description Stops the timer with an existing message
      * @param {*} message
      * @param {*} meta
-     * @memberof Logger
      */
     stop(message, meta = {}) {
         let timeMs = null;
@@ -96,16 +79,28 @@ export default class Logger {
 
     /**
      * @description Returns the output for a corresponding level
-     * @param {*} level
-     * @returns {string} outputLevel
+     * @param {string} level
+     * @returns {Stream|null} output
      * @memberof Logger
      * @private
      */
-    outputLevel(level) {
-        return this.config.levels
+    getOutputForLevel(level) {
+        const outputLevel = this.config.levels
             .slice(0, this.config.levels.indexOf(level) + 1)
             .reverse()
             .find(levelName => levelName in this.config.outputs);
+
+        const output = this.config.outputs[outputLevel];
+
+        if (!output) {
+            return null;
+        }
+
+        if (!['stderr', 'stdout'].includes(output)) {
+            throw new Error(`Output ${output} not supported`);
+        }
+
+        return process[output];
     }
 
     /**
@@ -124,26 +119,18 @@ export default class Logger {
     /**
      * @description Writes the content of an event to the output
      * @param {object} event
-     * @param {string} level
      * @memberof Logger
      * @private
      */
-    write(event, level) {
-        if (this.isLevelSilent(level)) {
+    write(event) {
+        if (this.isLevelSilent(event.level)) {
             return;
         }
 
-        const message = this.config.formatter(...Object.values(event));
-        const outputLevel = this.outputLevel(level);
-        const output = this.config.outputs[outputLevel];
+        const message = this.config.formatter(event);
+        const target = this.getOutputForLevel(event.level);
 
-        if (!['stderr', 'stdout'].includes(output)) {
-            throw new Error(`Output ${output} not supported`);
-        }
-
-        const target = process[output];
-
-        if (target.writable) {
+        if (target && target.writable) {
             target.write(`${message}\n`);
         }
     }

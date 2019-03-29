@@ -8,12 +8,16 @@ class PluginSentry {
         environment: 'dev',
         maxBreadcrumbs: 50,
         exceptionLevel: 'error',
-        breadcrumbLevels: [
-            'error',
-            'warning',
-            'info',
-            'debug',
-        ],
+        breadcrumbLevelMap: {
+            emergency: 'error',
+            alert: 'error',
+            critical: 'error',
+            error: 'error',
+            warning: 'warning',
+            notice: 'info',
+            info: 'info',
+            debug: 'debug',
+        },
     };
 
     breadCrumbs = [];
@@ -37,10 +41,64 @@ class PluginSentry {
         });
     }
 
-    isException(level) {
+    log(event) {
+        if (this.isException(event)) {
+            this.logException(event);
+        }
+
+        this.addBreadcrumb(event);
+    }
+
+    isException({ level }) {
         const { levels, sentry } = this.config;
 
         return levels.indexOf(sentry.exceptionLevel) >= levels.indexOf(level);
+    }
+
+    logException({ level, message, meta: { tags = {} } }) {
+        const { sentry, context = {} } = this.config;
+
+        Sentry.withScope((scope) => {
+            const { user, ...extras } = context;
+
+            if (user) {
+                scope.setUser(this.ensureUser(user));
+            }
+
+            Object.entries(extras).forEach(([key, value]) => {
+                scope.setExtra(key, value);
+            });
+
+            Object.entries(tags).forEach(([key, value]) => {
+                scope.setTag(key, value);
+            });
+
+            this.breadCrumbs.forEach((breadCrumb) => {
+                Sentry.addBreadcrumb({
+                    category: breadCrumb.level,
+                    message: breadCrumb.message,
+                    level: sentry.breadcrumbLevelMap[breadCrumb.level],
+                    data: breadCrumb.meta,
+                });
+            });
+
+            scope.setLevel(level);
+            Sentry.captureException(message);
+        });
+    }
+
+    addBreadcrumb(event) {
+        const { sentry } = this.config;
+
+        if (!Object.keys(sentry.breadcrumbLevelMap).includes(event.level)) {
+            return;
+        }
+
+        this.breadCrumbs.push(event);
+
+        if (this.breadCrumbs.length > sentry.maxBreadcrumbs) {
+            this.breadCrumbs.shift();
+        }
     }
 
     intersect(aParam, bParam) {
@@ -54,62 +112,23 @@ class PluginSentry {
         return a.filter(e => b.includes(e));
     }
 
-    log(event) {
-        const {
-            message,
-            level,
-            meta: { tags = {} },
-        } = event;
-
-        const { sentry, context = {} } = this.config;
-
-        if (this.isException(level)) {
-            // See: https://docs.sentry.io/enriching-error-data/scopes/?platform=javascript
-            Sentry.withScope((scope) => {
-                Object.entries(tags).forEach(([key, value]) => {
-                    scope.setTag(key, value);
-                });
-
-                const { user, ...extras } = context;
-
-                Object.entries(extras).forEach(([key, value]) => {
-                    scope.setExtra(key, value);
-                });
-
-                if (user) {
-                    if (typeof user === 'object') {
-                        const keys = ['id', 'username', 'email', 'ip_adrress'];
-                        const keyIntersect = this.intersect(keys, Object.keys(user));
-
-                        if (keyIntersect.length === 0) {
-                            user.id = 'unknown';
-                        }
-
-                        scope.setUser(user);
-                    } else {
-                        scope.setUser({ id: user });
-                    }
-                }
-
-                if (sentry.breadcrumbLevels.includes(level)) {
-                    this.breadCrumbs.forEach((breadCrumb) => {
-                        Sentry.addBreadcrumb({
-                            category: breadCrumb.level,
-                            message: breadCrumb.message,
-                            level: breadCrumb.level,
-                            data: breadCrumb.meta,
-                        });
-                    });
-                }
-
-                scope.setLevel(level);
-
-                // Tagged version of caputureException
-                Sentry.captureException(message);
-            });
-        } else {
-            this.breadCrumbs.push(event);
+    ensureUser(user) {
+        if (!user) {
+            return null;
         }
+
+        if (typeof user !== 'object') {
+            return { id: user };
+        }
+
+        const keys = ['id', 'username', 'email', 'ip_adrress'];
+        const keyIntersect = this.intersect(keys, Object.keys(user));
+
+        if (keyIntersect.length === 0) {
+            return { ...user, id: 'unknown' };
+        }
+
+        return user;
     }
 }
 

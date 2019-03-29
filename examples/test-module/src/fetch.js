@@ -19,6 +19,9 @@ async function goGetIt(url) {
     });
 
     try {
+        logger.start('Fetch');
+        logger.info('Fetch data', { url });
+
         const response = await fetch(url);
 
         if (!response.ok) {

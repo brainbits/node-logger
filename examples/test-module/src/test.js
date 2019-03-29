@@ -3,13 +3,16 @@ import Logger, { HttpError } from '@tspm/node-logger';
 
 export default function test() {
     const logger = new Logger();
-    logger.emergency(new Error('test'), { foo: 'bar' })
-    logger.alert(new Error('test'), { foo: 'bar' })
-    logger.critical(new HttpError('test'), { foo: 'bar' })
-    logger.error(new Error('test'), { foo: 'bar' })
-    logger.warning('test', { foo: 'bar' })
-    logger.notice('test', { foo: 'bar' })
-    logger.info('test', { foo: 'bar' })
-    logger.debug('test', { foo: 'bar' })
+
+    logger.start('Stop watch');
+    logger.debug('test debug');
+    logger.info('test info', { foo: 'bar' });
+    logger.notice('test notice', { foo: 'bar' });
+    logger.warning('test warning', { foo: 'bar' });
+    logger.stop('Stop watch');
+    logger.error(new Error('test error'), { foo: 'bar' });
+    logger.critical(new HttpError('test critical'), { foo: 'bar' });
+    logger.alert(new Error('test alert 1'), { foo: 'bar' });
+    logger.emergency(new Error('test emergency'), { foo: 'bar' });
 }
 
