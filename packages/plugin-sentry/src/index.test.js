@@ -3,75 +3,172 @@ import PluginSentry from './index';
 
 jest.mock('@sentry/node');
 
-const config = {
-    maxLevel: 'error',
-    levels: [
-        'error',
-        'info',
-        'debug',
-    ],
-    sentry: {
-        maxBreadcrumbs: 3,
-    },
-    plugins: [],
-    blah: 'foo',
-    formatter: () => {},
-};
-
 describe('PluginSentry', () => {
-    it('should have the correct properties', () => {
-        const plugin = new PluginSentry(config);
+    let scope;
+    let config;
 
-        expect(plugin).toHaveProperty('log', expect.any(Function));
-        expect(plugin).toHaveProperty('isException', expect.any(Function));
-        expect(plugin).toHaveProperty('isException', expect.any(Function));
+    beforeEach(() => {
+        config = {
+            maxLevel: 'error',
+            levels: [
+                'error',
+                'info',
+                'debug',
+            ],
+            sentry: {
+                maxBreadcrumbs: 3,
+            },
+            plugins: [],
+            blah: 'foo',
+            formatter: () => {},
+        };
+
+        scope = {
+            setLevel: jest.fn(),
+            setUser: jest.fn(),
+            setExtra: jest.fn(),
+            setTag: jest.fn(),
+            addBreadcrumb: jest.fn(),
+        };
+
+        Sentry.withScope.mockImplementation(fn => fn(scope));
     });
 
-    it('should call Sentry.caputreException', () => {
+    it('should call Sentry.captureException', () => {
         const plugin = new PluginSentry(config);
         const error = new Error('error message');
 
         plugin.log({
-            message: new Error('error message'),
-            context: 'context',
+            message: error,
             level: 'error',
         });
 
         expect(Sentry.captureException).toHaveBeenCalledWith(error);
-        expect(Sentry.withScope).not.toHaveBeenCalled();
     });
 
-    it('should call Sentry.caputreException with tags', () => {
+    it('should set correct level', () => {
         const plugin = new PluginSentry(config);
-        const error = new Error('error message');
 
         plugin.log({
             message: new Error('error message'),
-            context: 'context',
             level: 'error',
-            tagsMap: new Map([['tag', 'my tag value']]),
         });
 
-        expect(Sentry.captureException).toHaveBeenCalledWith(error);
-        expect(Sentry.withScope).toHaveBeenCalled();
+        expect(scope.setLevel).toHaveBeenCalledWith('error');
     });
 
-    it('should add breadcrumbs', () => {
+    it('should set correct user if given string', () => {
+        config.context = { user: 'foobar' };
+
+        const plugin = new PluginSentry(config);
+
+        plugin.log({
+            message: new Error('error message'),
+            level: 'error',
+        });
+
+        expect(scope.setUser).toHaveBeenCalledWith({ id: config.context.user });
+    });
+
+    it('should set correct user if object with id given', () => {
+        config.context = { user: { id: 'foobar' } };
+
+        const plugin = new PluginSentry(config);
+
+        plugin.log({
+            message: new Error('error message'),
+            level: 'error',
+        });
+
+        expect(scope.setUser).toHaveBeenCalledWith(config.context.user);
+    });
+
+    it('should set correct user if object with username given', () => {
+        config.context = { user: { username: 'foobar' } };
+
+        const plugin = new PluginSentry(config);
+
+        plugin.log({
+            message: new Error('error message'),
+            level: 'error',
+        });
+
+        expect(scope.setUser).toHaveBeenCalledWith(config.context.user);
+    });
+
+    it('should set correct user if object with email given', () => {
+        config.context = { user: { email: 'foobar' } };
+
+        const plugin = new PluginSentry(config);
+
+        plugin.log({
+            message: new Error('error message'),
+            level: 'error',
+        });
+
+        expect(scope.setUser).toHaveBeenCalledWith(config.context.user);
+    });
+
+    it('should set correct user if object with ip_address given', () => {
+        config.context = { user: { ip_address: 'foobar' } };
+
+        const plugin = new PluginSentry(config);
+
+        plugin.log({
+            message: new Error('error message'),
+            level: 'error',
+        });
+
+        expect(scope.setUser).toHaveBeenCalledWith(config.context.user);
+    });
+
+    it('should set correct tags', () => {
+        const plugin = new PluginSentry(config);
+
+        plugin.log({
+            message: new Error('error message'),
+            level: 'error',
+            meta: { tags: { foo: 'bar' } },
+        });
+
+        expect(scope.setTag).toHaveBeenCalledWith('foo', 'bar');
+    });
+
+    it('should set correct extras and omit user', () => {
+        config.context = { user: 'baz', foo: 'bar' };
+
+        const plugin = new PluginSentry(config);
+
+        plugin.log({
+            message: new Error('error message'),
+            level: 'error',
+        });
+
+        expect(scope.setExtra).toHaveBeenCalledWith('foo', 'bar');
+        expect(scope.setExtra).not.toHaveBeenCalledWith('user', 'baz');
+    });
+
+    it('should add breadcrumbs for next exception', () => {
         const plugin = new PluginSentry(config);
 
         plugin.log({
             message: 'some message',
-            context: 'context',
             level: 'info',
-            tagsMap: new Map([
-                ['tag', 'my tag value'],
-            ]),
+            meta: { foo: 'bar' },
+        });
+
+        expect(Sentry.addBreadcrumb).not.toHaveBeenCalled();
+
+        plugin.log({
+            message: new Error(),
+            level: 'error',
         });
 
         expect(Sentry.addBreadcrumb).toHaveBeenCalledWith({
-            category: 'context',
+            category: 'info',
             level: 'info',
             message: 'some message',
+            data: { foo: 'bar' },
         });
     });
 });

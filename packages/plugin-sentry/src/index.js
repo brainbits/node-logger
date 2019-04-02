@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import * as Sentry from '@sentry/node';
 
-class PluginSentry {
+export default class PluginSentry {
     defaults = {
         debug: false,
         dsn: '',
@@ -55,7 +55,7 @@ class PluginSentry {
         return levels.indexOf(sentry.exceptionLevel) >= levels.indexOf(level);
     }
 
-    logException({ level, message, meta: { tags = {} } }) {
+    logException({ level, message, meta: { tags = {} } = {} }) {
         const { sentry, context = {} } = this.config;
 
         Sentry.withScope((scope) => {
@@ -121,7 +121,7 @@ class PluginSentry {
             return { id: user };
         }
 
-        const keys = ['id', 'username', 'email', 'ip_adrress'];
+        const keys = ['id', 'username', 'email', 'ip_address'];
         const keyIntersect = this.intersect(keys, Object.keys(user));
 
         if (keyIntersect.length === 0) {
@@ -131,5 +131,3 @@ class PluginSentry {
         return user;
     }
 }
-
-export default PluginSentry;
