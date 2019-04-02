@@ -3,6 +3,7 @@ import fs from 'fs';
 import { join } from 'path';
 
 const defaultConfig = {
+    channel: 'unknown',
     levels: [
         'emergency',
         'alert',
@@ -19,6 +20,8 @@ const defaultConfig = {
         warning: 'stdout',
     },
     timerLevel: 'debug',
+    formatter: null,
+    plugins: [],
 };
 
 function getPackageConfigInPath(path) {
@@ -30,7 +33,7 @@ function getPackageConfigInPath(path) {
 
     const pkg = require(packageJsonPath);
 
-    return pkg.nodeLogger;
+    return { channel: pkg.name || defaultConfig.channel, ...pkg.nodeLogger };
 }
 
 function loadConfigFromPackage() {
@@ -40,10 +43,10 @@ function loadConfigFromPackage() {
         .find(config => !!config.config);
 
     if (!pkgConfig) {
-        return {};
+        return { path: null, config: {} };
     }
 
-    return pkgConfig || {};
+    return pkgConfig;
 }
 
 function loadModule(module, path) {
@@ -55,6 +58,10 @@ function loadFormatter(config, path) {
 
     if (typeof formatter === 'function') {
         return;
+    }
+
+    if (!path) {
+        throw new Error('Formatter must be configured as function unless a package.json is available');
     }
 
     try {
@@ -84,7 +91,7 @@ function loadPlugins(config, path) {
 function deepParseEnv(config) {
     const parsedConfig = {};
 
-    if (Array.isArray(config) || typeof config === 'boolean') {
+    if (!config || Array.isArray(config) || typeof config === 'boolean' || typeof config === 'function') {
         return config;
     }
 
@@ -111,7 +118,27 @@ function deepParseEnv(config) {
 
 function assertConfig(config) {
     if (!config.formatter) {
-        throw new Error('No formatter found in configuration');
+        throw new Error('Invalid formatter: No formatter found in configuration');
+    }
+
+    if (!Array.isArray(config.levels) || config.levels.length === 0) {
+        throw new Error('Invalid levels: No levels were configured');
+    }
+
+    if (!config.maxLevel || config.levels.indexOf(config.maxLevel) < 0) {
+        throw new Error(`Invalid maxLevel: ${config.maxLevel}`);
+    }
+
+    if (!config.timerLevel || config.levels.indexOf(config.timerLevel) < 0) {
+        throw new Error(`Invalid timerLevel: ${config.timerLevel}`);
+    }
+
+    if (!config.outputs || Object.keys(config.outputs).find(k => !config.levels.includes(k))) {
+        throw new Error('Invalid outputs: Outputs can only be configured for existing log levels');
+    }
+
+    if (Object.values(config.outputs).find(k => !['stdout', 'stderr'].includes(k))) {
+        throw new Error('Invalid outputs: Output must be stdout or stderr');
     }
 }
 

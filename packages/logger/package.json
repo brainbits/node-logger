@@ -26,7 +26,8 @@
             ]
         ],
         "plugins": [
-            "@babel/plugin-proposal-class-properties"
+            "@babel/plugin-proposal-class-properties",
+            "@babel/plugin-proposal-export-default-from"
         ]
     },
     "eslintConfig": {
@@ -74,6 +75,7 @@
     "devDependencies": {
         "@babel/cli": "^7.2.3",
         "@babel/plugin-proposal-class-properties": "^7.4.0",
+        "@babel/plugin-proposal-export-default-from": "^7.2.0",
         "@babel/preset-env": "^7.3.4",
         "babel-eslint": "^10.0.1",
         "babel-jest": "^24.5.0",
