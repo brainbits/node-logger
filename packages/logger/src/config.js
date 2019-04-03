@@ -83,7 +83,7 @@ function loadPlugins(config, path) {
     config.plugins = config
         .plugins
         .map((plugin) => {
-            const Plugin = loadPlugin(plugin, path)
+            const Plugin = loadPlugin(plugin, path);
             return new Plugin(config);
         });
 }

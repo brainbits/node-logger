@@ -1,3 +1,4 @@
+/* eslint-disable import/no-absolute-path, import/no-unresolved */
 import fs from 'fs';
 import loadConfiguration from './config';
 import formatter from '/some/root/testpackage/node_modules/@tspm/node-logger-formatter-test';
