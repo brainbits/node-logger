@@ -33,14 +33,14 @@ You can add more parameters to your `"nodeLogger": {}` section.
 ```levels``` Levels (sorted array)
 > Default:
 ```javascript [
-    'emergency', // 0
+    'emergency',
     'alert',
     'critical',
     'error',
     'warning',
     'notice',
     'info', // max level default
-    'debug', // 7
+    'debug',
 ]
 ```
 
@@ -81,20 +81,28 @@ This will take the value of LOGGER_LEVEL or "info" as fallback. The fallback is 
 ## Usage
 ### Create a Logger instance
 ```javascript
-import Logger from '@tspm/node-logger';
+import { Logger } from '@tspm/node-logger';
 
 const logger = new Logger();
 ```
 #### Arguments
 
 ```javascript
-import Logger from '@tspm/node-logger';
+import { Logger } from '@tspm/node-logger';
 
-const loggerConfig = {
+const config = {
     maxLevel: 'error',
+    level: [
+        'error',
+        'info',
+        'debug',
+    ],
+    formatter: (event) => {
+        console.log(event)
+    }
 };
 
-const logger = new Logger('context', loggerConfig);
+const logger = new Logger(config);
 ```
 
 First argument is a string to define your context.
