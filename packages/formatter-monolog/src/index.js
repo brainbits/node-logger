@@ -1,5 +1,27 @@
 import getType from 'jest-get-type';
-import { timestamp, isNonEmptyObject } from './utils';
+import dateFns from 'date-fns';
+
+/**
+ * @description Get current timestamp
+ * @param {any} [timestampFormat=TIMESTAMP_FORMAT]
+ * @returns {string} Current timestamp in given format
+ */
+function timestamp(timestampFormat) {
+    return dateFns.format(new Date(), timestampFormat);
+}
+
+/**
+ * @description Checks if the object is non empty or has undefined properties
+ * @export
+ * @param {any} object
+ * @returns {boolean} Returns true if the object is not empty
+ */
+function isNonEmptyObject(object) {
+    return typeof object === 'object' && Object
+        .values(object)
+        .filter(entry => entry !== undefined)
+        .length > 0;
+}
 
 /**
  * @description Make a string of an non empty object or return ‘[]' as a string
@@ -76,13 +98,15 @@ function formatMonologMessage(channel, level, logData, meta = {}) {
 /**
  * @description Formatter function
  * @export
- * @param {string} channel Channel of the logger
- * @param {string} level Level of the logger
- * @param {*} message Message
- * @param {object} meta Some meta information for context
- * @returns {function} formatter function for winston logger
+ * @param {object} event
+ * @returns {function} formatter function for logger
  */
-export default function monolog(channel, level, message, meta) {
+export default function monolog({
+    channel,
+    level,
+    message,
+    meta,
+}) {
     let logData = {
         message: null,
         context: [],
