@@ -1,4 +1,4 @@
-import Logger, { HttpError } from '@tspm/node-logger';
+import { Logger, HttpError } from '@tspm/node-logger';
 
 
 export default function test() {

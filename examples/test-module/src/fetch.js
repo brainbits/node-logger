@@ -1,4 +1,4 @@
-import Logger from '@tspm/node-logger';
+import { Logger } from '@tspm/node-logger';
 import fetch from 'node-fetch';
 
 const urls = [
