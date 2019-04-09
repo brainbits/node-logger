@@ -1,4 +1,4 @@
-import { CustomError, ConnectorError, HttpError } from './errors';
+import { CustomError, ConnectorError, HttpError } from './index';
 
 describe('Error types:', () => {
     describe('CustomError', () => {
