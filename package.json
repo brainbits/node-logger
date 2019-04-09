@@ -1,92 +1,4 @@
 {
-<<<<<<< HEAD
-    "name": "@tspm/node-logger",
-    "version": "1.1.0",
-    "description": "Logger for node projects",
-    "publishConfig": {
-        "registry": "http://npm.int-vm-rancher-host2.brainbits-gmbh.local"
-    },
-    "main": "dist/index.js",
-    "scripts": {
-        "build:watch": "npm run build -- --watch --source-maps",
-        "build": "babel src --out-dir ./dist --ignore test.js,setupTests.js,__mocks__/*",
-        "lint": "eslint ./src",
-        "coverage": "npm test -- --coverage",
-        "test:watch": "npm test -- --watch",
-        "test": "jest"
-    },
-    "babel": {
-        "presets": [
-            [
-                "env",
-                {
-                    "targets": {
-                        "node": "current"
-                    }
-                }
-            ]
-        ],
-        "plugins": [
-            "transform-object-rest-spread"
-        ]
-    },
-    "eslintConfig": {
-        "parser": "babel-eslint",
-        "extends": [
-            "brainbits",
-            "brainbits-jest"
-        ],
-        "env": {
-            "node": true,
-            "jest": true
-        }
-    },
-    "jest": {
-        "setupFiles": [
-            "./src/setupTests.js"
-        ],
-        "collectCoverage": true,
-        "collectCoverageFrom": [
-            "src/**/*.js"
-        ],
-        "coverageDirectory": "coverage",
-        "transform": {
-            "^.+\\.js$": "babel-jest"
-        },
-        "roots": [
-            "<rootDir>/src/"
-        ]
-    },
-    "repository": {
-        "type": "git",
-        "url": "git@gitlab.brainbits.net:tspm/node-logger.git"
-    },
-    "keywords": [
-        "logger",
-        "winston",
-        "monolog"
-    ],
-    "author": "Brainbits <moriarty@brainbits.net>",
-    "license": "MIT",
-    "dependencies": {
-        "date-fns": "^1.29.0",
-        "jest-get-type": "^22.1.0"
-    },
-    "devDependencies": {
-        "babel-cli": "^6.26.0",
-        "babel-core": "^6.26.0",
-        "babel-eslint": "^8.2.1",
-        "babel-jest": "^22.2.0",
-        "babel-plugin-transform-object-rest-spread": "^6.26.0",
-        "babel-preset-env": "^1.6.1",
-        "eslint": "^4.17.0",
-        "eslint-config-brainbits": "^0.4.2",
-        "eslint-config-brainbits-jest": "^0.4.2",
-        "eslint-plugin-import": "^2.8.0",
-        "eslint-plugin-jest": "^21.7.0",
-        "jest": "^22.2.1"
-    }
-=======
   "name": "@tspm/node-logger-monorepo",
   "description": "Logger for node projects",
   "publishConfig": {
@@ -100,5 +12,4 @@
   "devDependencies": {
     "lerna": "^3.13.1"
   }
->>>>>>> release/2.0.0
 }
