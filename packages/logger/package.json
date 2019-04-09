@@ -42,9 +42,6 @@
         }
     },
     "jest": {
-        "setupFiles": [
-            "./src/setupTests.js"
-        ],
         "collectCoverage": true,
         "collectCoverageFrom": [
             "src/**/*.js"
