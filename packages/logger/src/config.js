@@ -49,15 +49,15 @@ function loadConfigFromPackage() {
     return pkgConfig;
 }
 
-function loadModule(module, path) {
-    return require(join(path, module)).default;
+function loadModule(moduleName, path) {
+    return require(join(path, moduleName)).default;
 }
 
 function loadFormatter(config, path) {
     const { formatter } = config;
 
     if (typeof formatter === 'function') {
-        return;
+        return formatter;
     }
 
     if (!path) {
@@ -65,7 +65,7 @@ function loadFormatter(config, path) {
     }
 
     try {
-        config.formatter = loadModule(formatter, path);
+        return loadModule(formatter, path);
     } catch (error) {
         throw new Error(`Formatter ${formatter} not found in ${path}: ${error.message}`);
     }
@@ -80,7 +80,7 @@ function loadPlugin(pluginConfig, path) {
 }
 
 function loadPlugins(config, path) {
-    config.plugins = config
+    return config
         .plugins
         .map((plugin) => {
             const Plugin = loadPlugin(plugin, path);
@@ -144,7 +144,6 @@ function assertConfig(config) {
 
 export default function loadConfiguration(config = {}) {
     const packageJsonConfigDefinition = loadConfigFromPackage();
-
     const merged = deepParseEnv({
         ...defaultConfig,
         ...packageJsonConfigDefinition.config,
@@ -152,8 +151,10 @@ export default function loadConfiguration(config = {}) {
     });
 
     assertConfig(merged);
-    loadFormatter(merged, packageJsonConfigDefinition.path);
-    loadPlugins(merged, packageJsonConfigDefinition.path);
 
-    return merged;
+    return {
+        ...merged,
+        formatter: loadFormatter(merged, packageJsonConfigDefinition.path),
+        plugins: loadPlugins(merged, packageJsonConfigDefinition.path),
+    };
 }
