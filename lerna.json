@@ -1,6 +1,20 @@
 {
-  "packages": [
-    "packages/*"
-  ],
-  "version": "2.0.0"
+    "packages": [
+        "packages/*"
+    ],
+    "version": "2.0.0",
+    "command": {
+        "bootstrap": {
+            "npmClientArgs": [
+                "--no-package-lock"
+            ]
+        },
+        "publish": {
+            "skipGit": true,
+            "allowBranch": "master"
+        },
+        "version": {
+            "message": "Release %s"
+          }
+    }
 }
