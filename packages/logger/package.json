@@ -1,6 +1,6 @@
 {
     "name": "@tspm/node-logger",
-    "version": "2.0.0-alpha.0",
+    "version": "2.0.0-alpha.1",
     "description": "Logger for node projects",
     "publishConfig": {
         "registry": "http://npm.int-vm-rancher-host2.brainbits-gmbh.local"
