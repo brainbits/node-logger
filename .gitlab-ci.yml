@@ -43,4 +43,4 @@ release:package:
     script:
         - npm config set registry http:$NPM_REGISTRY
         - echo "${NPM_REGISTRY}:_authToken=${NPM_TOKEN}">.npmrc
-        - npx lerna publish
+        - npx lerna publish from-package --yes

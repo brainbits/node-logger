@@ -11,7 +11,8 @@
         },
         "publish": {
             "skipGit": true,
-            "allowBranch": "master"
+            "allowBranch": "master",
+            "registry": "http://npm.int-vm-rancher-host2.brainbits-gmbh.local"
         },
         "version": {
             "message": "Release %s"
