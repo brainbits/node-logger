@@ -1,6 +1,6 @@
 {
     "name": "test-module",
-    "version": "1.0.0",
+    "version": "0.0.1",
     "description": "",
     "main": "index.js",
     "scripts": {
@@ -12,7 +12,6 @@
     "nodeLogger": {
         "maxLevel": "env(LOGGER_LEVEL, debug)",
         "sentry": {
-            "dsn": "https://59a45aecaec3433e9412482ecfa60b90:c9294447311243ebac923d791448c3e5@sentry.brainbits.net/50",
             "exceptionLevel": "env(EXCEPTION_LEVEL, error)",
             "debug": false
         },
