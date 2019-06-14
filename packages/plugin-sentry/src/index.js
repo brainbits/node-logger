@@ -6,6 +6,7 @@ export default class PluginSentry {
         debug: false,
         dsn: '',
         environment: 'dev',
+        release: null,
         maxBreadcrumbs: 50,
         exceptionLevel: 'error',
         breadcrumbLevelMap: {
@@ -18,6 +19,7 @@ export default class PluginSentry {
             info: 'info',
             debug: 'debug',
         },
+        tags: {},
     };
 
     breadCrumbs = [];
@@ -37,6 +39,7 @@ export default class PluginSentry {
             debug: this.config.sentry.debug,
             dsn: this.config.sentry.dsn,
             environment: this.config.sentry.environment,
+            release: this.config.sentry.release,
             maxBreadcrumbs: this.config.sentry.maxBreadcrumbs,
         });
     }
@@ -67,6 +70,10 @@ export default class PluginSentry {
 
             Object.entries(extras).forEach(([key, value]) => {
                 scope.setExtra(key, value);
+            });
+
+            Object.entries(sentry.tags).forEach(([key, value]) => {
+                scope.setTag(key, value);
             });
 
             Object.entries(tags).forEach(([key, value]) => {

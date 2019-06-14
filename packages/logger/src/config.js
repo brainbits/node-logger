@@ -99,11 +99,15 @@ function deepParseEnv(config) {
         const match = config.match(/env\(([^,)]*)(, *(.*))?\)/);
 
         if (match) {
-            if (!process.env[match[1]] && !match[3]) {
-                throw new Error(`Env ${match[1]} is not set nor has a fallback!`);
+            if (process.env[match[1]] !== undefined) {
+                return process.env[match[1]];
             }
 
-            return process.env[match[1]] || match[3];
+            if (match[3] !== undefined) {
+                return match[3];
+            }
+
+            throw new Error(`Env ${match[1]} is not set nor has a fallback!`);
         }
 
         return config;
