@@ -17,6 +17,7 @@ describe('PluginSentry', () => {
             ],
             sentry: {
                 maxBreadcrumbs: 3,
+                tags: {},
             },
             plugins: [],
             blah: 'foo',
@@ -132,6 +133,21 @@ describe('PluginSentry', () => {
         });
 
         expect(scope.setTag).toHaveBeenCalledWith('foo', 'bar');
+    });
+
+    it('should merge global tags with event specific tags', () => {
+        config.sentry.tags.test = 'baz';
+
+        const plugin = new PluginSentry(config);
+
+        plugin.log({
+            message: new Error('error message'),
+            level: 'error',
+            meta: { tags: { foo: 'bar' } },
+        });
+
+        expect(scope.setTag).toHaveBeenCalledWith('foo', 'bar');
+        expect(scope.setTag).toHaveBeenCalledWith('test', 'baz');
     });
 
     it('should set correct extras and omit user', () => {
