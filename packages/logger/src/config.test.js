@@ -220,5 +220,25 @@ describe('loadConfiguration', () => {
 
             expect(config.channel).toEqual('baz');
         });
+
+        it('throws error on missing variable', () => {
+            delete process.env.MY_TEST;
+
+            expect(() => loadConfiguration({
+                formatter: jest.fn(),
+                channel: 'env(MY_TEST)',
+            })).toThrow(/MY_TEST/);
+        });
+
+        it('allow empty strings as valid values', () => {
+            process.env.MY_TEST = '';
+
+            const config = loadConfiguration({
+                formatter: jest.fn(),
+                channel: 'env(MY_TEST)',
+            });
+
+            expect(config.channel).toEqual('');
+        });
     });
 });
