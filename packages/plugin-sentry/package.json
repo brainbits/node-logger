@@ -1,6 +1,6 @@
 {
     "name": "@tspm/node-logger-plugin-sentry",
-    "version": "2.1.2",
+    "version": "2.1.3",
     "description": "Logger plugin sentry",
     "publishConfig": {
         "registry": "http://npm.int-vm-rancher-host2.brainbits-gmbh.local"
