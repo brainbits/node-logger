@@ -1,6 +1,7 @@
 /* eslint-disable import/no-dynamic-require, global-require, no-param-reassign */
 import fs from 'fs';
 import { join } from 'path';
+import merge from 'deepmerge';
 
 const defaultConfig = {
     channel: 'unknown',
@@ -23,22 +24,6 @@ const defaultConfig = {
     formatter: null,
     plugins: [],
 };
-
-function mergeDeep(...objects) {
-    const isObject = obj => obj && typeof obj === 'object' && !Array.isArray(obj);
-
-    return objects.reduce((prev, obj) => {
-        Object.keys(obj).forEach((key) => {
-            if (isObject(prev[key]) && isObject(obj[key])) {
-                prev[key] = mergeDeep(prev[key], obj[key]);
-            } else {
-                prev[key] = obj[key];
-            }
-        });
-
-        return prev;
-    }, {});
-}
 
 function getPackageConfigInPath(path) {
     const packageJsonPath = join(path, '..', 'package.json');
@@ -166,11 +151,17 @@ function assertConfig(config) {
 
 export default function loadConfiguration(config = {}) {
     const packageJsonConfigDefinition = loadConfigFromPackage();
-    const merged = deepParseEnv(mergeDeep(
+    const merged = deepParseEnv(merge.all([
         defaultConfig,
         packageJsonConfigDefinition.config,
         config,
-    ));
+    ], {
+        arrayMerge: (target, source) => source,
+        customMerge: (key) => {
+            if (key === 'outputs') return (a, b) => b; // Override outputs instead of merging them
+            return undefined;
+        },
+    }));
 
     assertConfig(merged);
 
