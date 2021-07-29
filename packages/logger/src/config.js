@@ -24,6 +24,22 @@ const defaultConfig = {
     plugins: [],
 };
 
+function mergeDeep(...objects) {
+    const isObject = obj => obj && typeof obj === 'object' && !Array.isArray(obj);
+
+    return objects.reduce((prev, obj) => {
+        Object.keys(obj).forEach((key) => {
+            if (isObject(prev[key]) && isObject(obj[key])) {
+                prev[key] = mergeDeep(prev[key], obj[key]);
+            } else {
+                prev[key] = obj[key];
+            }
+        });
+
+        return prev;
+    }, {});
+}
+
 function getPackageConfigInPath(path) {
     const packageJsonPath = join(path, '..', 'package.json');
 
@@ -38,8 +54,10 @@ function getPackageConfigInPath(path) {
 
 function loadConfigFromPackage() {
     const { paths } = process.mainModule;
+
     const pkgConfig = paths
         .map(path => ({ path, config: getPackageConfigInPath(path) }))
+        .reverse()
         .find(config => !!config.config);
 
     if (!pkgConfig) {
@@ -148,11 +166,11 @@ function assertConfig(config) {
 
 export default function loadConfiguration(config = {}) {
     const packageJsonConfigDefinition = loadConfigFromPackage();
-    const merged = deepParseEnv({
-        ...defaultConfig,
-        ...packageJsonConfigDefinition.config,
-        ...config,
-    });
+    const merged = deepParseEnv(mergeDeep(
+        defaultConfig,
+        packageJsonConfigDefinition.config,
+        config,
+    ));
 
     assertConfig(merged);
 
