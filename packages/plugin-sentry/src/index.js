@@ -41,6 +41,10 @@ export default class PluginSentry {
             environment: this.config.sentry.environment,
             release: this.config.sentry.release,
             maxBreadcrumbs: this.config.sentry.maxBreadcrumbs,
+            integrations(integrations) {
+                return integrations
+                    .filter(integration => !(integration instanceof Sentry.Integrations.Console));
+            },
         });
     }
 
