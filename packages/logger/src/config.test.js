@@ -1,7 +1,9 @@
 /* eslint-disable import/no-absolute-path, import/no-unresolved */
 import fs from 'fs';
 import loadConfiguration from './config';
+// eslint-disable-next-line import/extensions
 import formatter from '/some/root/testpackage/node_modules/@tspm/node-logger-formatter-test';
+// eslint-disable-next-line import/extensions
 import Plugin from '/some/root/testpackage/node_modules/@tspm/node-logger-sentry-plugin';
 import packageJson from '/some/root/testpackage/package.json';
 
