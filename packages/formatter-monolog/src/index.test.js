@@ -1,8 +1,4 @@
-import { format } from 'date-fns';
 import monolog from './index';
-
-jest.mock('date-fns');
-format.mockReturnValue('2010-01-31 23:59:59');
 
 function createEvent(channel, level, message, meta) {
     return {
@@ -16,11 +12,18 @@ function createEvent(channel, level, message, meta) {
 describe('monolog function', () => {
     let error;
     beforeEach(() => {
+        jest.useFakeTimers('modern');
+        jest.setSystemTime(new Date('2010-01-31T23:59:59'));
+
         error = new Error('This is a fake error');
         error.stack = `Error - This is a fake error
             at Object.blah (/src/blah.js:18:28)
             at Object.foo (/src/foo.js:18:28)
         `;
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
     });
 
     it('should get the correct channel name', () => {

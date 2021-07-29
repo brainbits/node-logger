@@ -1,5 +1,5 @@
-import getType from 'jest-get-type';
-import dateFns from 'date-fns';
+import { getType } from 'jest-get-type';
+import { format } from 'date-fns';
 
 /**
  * @description Get current timestamp
@@ -7,7 +7,7 @@ import dateFns from 'date-fns';
  * @returns {string} Current timestamp in given format
  */
 function timestamp(timestampFormat) {
-    return dateFns.format(new Date(), timestampFormat);
+    return format(new Date(), timestampFormat);
 }
 
 /**
@@ -84,15 +84,15 @@ function parseObject({
  * @returns {string} Monolog string
  */
 function formatMonologMessage(channel, level, logData, meta = {}) {
-    const format = 'YYYY-MM-DD HH:mm:ss';
+    const formatString = 'yyyy-MM-dd HH:mm:ss';
     const context = stringifyExtras({
         ...logData.context,
         ...meta,
     });
     const extras = stringifyExtras(logData.extras);
 
-    // Monolog format: "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n"
-    return `[${timestamp(format)}] ${channel}.${level.toUpperCase()}: ${logData.message || '-'} ${context} ${extras}`;
+    // Monolog formatString: "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n"
+    return `[${timestamp(formatString)}] ${channel}.${level.toUpperCase()}: ${logData.message || '-'} ${context} ${extras}`;
 }
 
 /**
