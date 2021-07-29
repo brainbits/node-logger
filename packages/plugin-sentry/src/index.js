@@ -47,6 +47,7 @@ export default class PluginSentry {
     log(event) {
         if (this.isException(event)) {
             this.logException(event);
+            return;
         }
 
         this.addBreadcrumb(event);
