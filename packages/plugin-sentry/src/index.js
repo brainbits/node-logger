@@ -63,15 +63,21 @@ export default class PluginSentry {
         return levels.indexOf(sentry.exceptionLevel) >= levels.indexOf(level);
     }
 
-    logException({ level, message, meta: { tags = {} } = {} }) {
+    logException({ level, message, meta = {} }) {
         const { sentry, context = {} } = this.config;
 
         Sentry.withScope((scope) => {
-            const { user, ...extras } = context;
+            const { user: configUser, ...configExtras } = context;
+            const { tags = {}, user: metaUser, ...extras } = meta;
+            const user = metaUser ?? configUser;
 
             if (user) {
                 scope.setUser(this.ensureUser(user));
             }
+
+            Object.entries(configExtras).forEach(([key, value]) => {
+                scope.setExtra(key, value);
+            });
 
             Object.entries(extras).forEach(([key, value]) => {
                 scope.setExtra(key, value);
