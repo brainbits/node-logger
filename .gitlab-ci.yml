@@ -41,7 +41,4 @@ release:package:
         - tags
     stage: release
     script:
-        - "echo Use registry: http:$NPM_REGISTRY"
-        - npm config set registry http:$NPM_REGISTRY --scope=@tspm
-        - echo "${NPM_REGISTRY}:_authToken=${NPM_TOKEN}">.npmrc
         - npx lerna publish from-package --yes

@@ -2,9 +2,6 @@
     "name": "@tspm/node-logger-plugin-sentry",
     "version": "2.2.2",
     "description": "Logger plugin sentry",
-    "publishConfig": {
-        "@tspm:registry": "https://gitlab.brainbits.net/api/v4/projects/136/packages/npm/"
-    },
     "main": "dist/index.js",
     "scripts": {
         "build:watch": "npm run build -- --watch --source-maps",

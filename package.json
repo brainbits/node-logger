@@ -1,9 +1,6 @@
 {
   "name": "@tspm/node-logger-monorepo",
   "description": "Logger for node projects",
-  "publishConfig": {
-    "@tspm:registry": "https://gitlab.brainbits.net/api/v4/projects/136/packages/npm/"
-  },
   "repository": {
     "type": "git",
     "url": "git@gitlab.brainbits.net:tspm/node-logger.git"

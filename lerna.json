@@ -11,8 +11,7 @@
         },
         "publish": {
             "skipGit": true,
-            "allowBranch": "master",
-            "registry": "https://gitlab.brainbits.net/api/v4/projects/136/packages/npm/"
+            "allowBranch": "master"
         },
         "version": {
             "message": "Release %s"
