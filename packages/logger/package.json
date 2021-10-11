@@ -1,6 +1,6 @@
 {
     "name": "@tspm/node-logger",
-    "version": "2.2.2",
+    "version": "2.2.3",
     "description": "Logger for node projects",
     "main": "dist/index.js",
     "scripts": {

@@ -1,6 +1,6 @@
 {
     "name": "@tspm/node-logger-plugin-sentry",
-    "version": "2.2.2",
+    "version": "2.2.3",
     "description": "Logger plugin sentry",
     "main": "dist/index.js",
     "scripts": {
