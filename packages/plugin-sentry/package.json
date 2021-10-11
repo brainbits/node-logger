@@ -3,7 +3,7 @@
     "version": "2.2.1",
     "description": "Logger plugin sentry",
     "publishConfig": {
-        "registry": "http://npm.int-vm-rancher-host2.brainbits-gmbh.local"
+        "@tspm:registry": "https://gitlab.brainbits.net/api/v4/projects/136/packages/npm/"
     },
     "main": "dist/index.js",
     "scripts": {

@@ -2,7 +2,7 @@
   "name": "@tspm/node-logger-monorepo",
   "description": "Logger for node projects",
   "publishConfig": {
-    "registry": "http://npm.int-vm-rancher-host2.brainbits-gmbh.local"
+    "@tspm:registry": "https://gitlab.brainbits.net/api/v4/projects/136/packages/npm/"
   },
   "repository": {
     "type": "git",
