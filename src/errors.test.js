@@ -21,7 +21,7 @@ describe('Error types:', () => {
         });
 
         it('should have a property stack with a stack trace in it', () => {
-            expect(error.stack).toContain('Suite.describe');
+            expect(error.stack).toContain('describe');
         });
 
         it('should execute captureStackTrace() from class Error', () => {
