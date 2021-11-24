@@ -3,6 +3,7 @@
     "version": "2.2.3",
     "description": "Logger for node projects",
     "main": "dist/index.js",
+    "types": "src/types.d.ts",
     "scripts": {
         "build": "babel ./src --out-dir ./dist --ignore test.js,setupTests.js,__mocks__/*",
         "build:watch": "npm run build -- --watch --source-maps",
