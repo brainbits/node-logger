@@ -56,20 +56,20 @@
     "author": "Brainbits <moriarty@brainbits.net>",
     "license": "MIT",
     "dependencies": {
-        "date-fns": "^2.23.0",
-        "jest-get-type": "^27.0.6"
+        "date-fns": "^2.26.0",
+        "jest-get-type": "^27.3.1"
     },
     "devDependencies": {
-        "@babel/cli": "^7.14.8",
-        "@babel/eslint-parser": "^7.14.7",
-        "@babel/preset-env": "^7.14.8",
-        "eslint": "^7.31.0",
-        "eslint-config-brainbits": "^3.0.8",
-        "eslint-config-brainbits-jest": "^3.0.8",
+        "@babel/cli": "^7.16.0",
+        "@babel/eslint-parser": "^7.16.3",
+        "@babel/preset-env": "^7.16.4",
+        "eslint": "^8.3.0",
+        "eslint-config-brainbits": "^3.0.9",
+        "eslint-config-brainbits-jest": "^3.0.9",
         "eslint-plugin-babel": "^5.3.1",
-        "eslint-plugin-import": "^2.23.4",
-        "eslint-plugin-jest": "^22.21.0",
-        "eslint-plugin-promise": "^5.1.0",
-        "jest": "^27.0.6"
+        "eslint-plugin-import": "^2.25.3",
+        "eslint-plugin-jest": "^25.3.0",
+        "eslint-plugin-promise": "^5.1.1",
+        "jest": "^27.3.1"
     }
 }
