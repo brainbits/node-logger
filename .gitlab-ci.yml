@@ -12,6 +12,7 @@ variables:
 setup:modules:
     stage: setup
     script:
+        - npm config set legacy-peer-deps true
         - npx lerna bootstrap
     artifacts:
         name: "node_modules_$CI_COMMIT_REF_NAME"
