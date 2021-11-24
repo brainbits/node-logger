@@ -1,6 +1,6 @@
 {
     "name": "@tspm/node-logger-plugin-sentry",
-    "version": "2.2.4",
+    "version": "2.2.5",
     "description": "Logger plugin sentry",
     "main": "dist/index.js",
     "types": "src/types.d.ts",
@@ -67,7 +67,7 @@
         "@babel/eslint-parser": "^7.16.3",
         "@babel/plugin-proposal-class-properties": "^7.16.0",
         "@babel/preset-env": "^7.16.4",
-        "@tspm/node-logger": "^2.2.3",
+        "@tspm/node-logger": "^2.2.5",
         "eslint": "^8.3.0",
         "eslint-config-brainbits": "^3.0.9",
         "eslint-config-brainbits-jest": "^3.0.9",
