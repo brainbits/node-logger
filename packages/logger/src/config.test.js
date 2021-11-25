@@ -37,15 +37,11 @@ jest.mock('/some/root/testpackage/package.json', () => ({
     },
 }), { virtual: true });
 
-process.mainModule = {
-    paths: [
-        '/some/root/testpackage/node_modules',
-    ],
-};
-
 describe('loadConfiguration', () => {
     beforeEach(() => {
         fs.existsSync.mockReturnValue(false);
+
+        jest.spyOn(process, 'cwd').mockReturnValue('/some/root/testpackage');
     });
 
     describe('validation', () => {
@@ -147,6 +143,7 @@ describe('loadConfiguration', () => {
     describe('with package.json', () => {
         beforeEach(() => {
             fs.existsSync.mockReturnValue(true);
+            fs.statSync.mockReturnValue({ isFile: jest.fn().mockReturnValue(true) });
         });
 
         it('merges configuration with defaults', () => {

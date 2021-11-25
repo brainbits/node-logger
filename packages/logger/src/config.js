@@ -1,6 +1,6 @@
 /* eslint-disable import/no-dynamic-require, global-require, no-param-reassign */
 import fs from 'fs';
-import { join } from 'path';
+import { dirname, join, resolve } from 'path';
 import merge from 'deepmerge';
 
 const defaultConfig = {
@@ -25,9 +25,7 @@ const defaultConfig = {
     plugins: [],
 };
 
-function getPackageConfigInPath(path) {
-    const packageJsonPath = join(path, '..', 'package.json');
-
+function getConfigFromPackage(packageJsonPath) {
     if (!fs.existsSync(packageJsonPath)) {
         return null;
     }
@@ -37,19 +35,38 @@ function getPackageConfigInPath(path) {
     return { channel: pkg.name || defaultConfig.channel, ...pkg.nodeLogger };
 }
 
+function findPackageJson() {
+    let dir = resolve(process.cwd());
+
+    do {
+        const pkgFile = join(dir, 'package.json');
+
+        if (!fs.existsSync(pkgFile) || !fs.statSync(pkgFile).isFile()) {
+            dir = join(dir, '..');
+            continue;
+        }
+
+        return pkgFile;
+    } while (dir !== resolve(dir, '..'));
+
+    return null;
+}
+
 function loadConfigFromPackage() {
-    const { paths } = process.mainModule;
+    const pkgFile = findPackageJson();
 
-    const pkgConfig = paths
-        .map(path => ({ path, config: getPackageConfigInPath(path) }))
-        .reverse()
-        .find(config => !!config.config);
-
-    if (!pkgConfig) {
+    if (!pkgFile) {
         return { path: null, config: {} };
     }
 
-    return pkgConfig;
+    const config = getConfigFromPackage(pkgFile);
+
+    if (!config) {
+        return { path: null, config: {} };
+    }
+
+    const modulePath = join(dirname(pkgFile), 'node_modules');
+    return { path: modulePath, config };
 }
 
 function loadModule(moduleName, path) {
