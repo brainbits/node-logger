@@ -41,12 +41,11 @@ function findPackageJson() {
     do {
         const pkgFile = join(dir, 'package.json');
 
-        if (!fs.existsSync(pkgFile) || !fs.statSync(pkgFile).isFile()) {
-            dir = join(dir, '..');
-            continue;
+        if (fs.existsSync(pkgFile) && fs.statSync(pkgFile).isFile()) {
+            return pkgFile;
         }
 
-        return pkgFile;
+        dir = join(dir, '..');
     } while (dir !== resolve(dir, '..'));
 
     return null;
