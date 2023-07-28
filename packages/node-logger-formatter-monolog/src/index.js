@@ -77,8 +77,8 @@ function parseObject({
 
 /**
  * @description Generate the monolog string
- * @param {string} channel Channel of the logger
- * @param {string} level Level of the logger
+ * @param {string} channel Channel of the node-logger
+ * @param {string} level Level of the node-logger
  * @param {object} logData Data from our object with message, context and extras
  * @param {object} meta Some meta information for context
  * @returns {string} Monolog string
@@ -99,7 +99,7 @@ function formatMonologMessage(channel, level, logData, meta = {}) {
  * @description Formatter function
  * @export
  * @param {object} event
- * @returns {function} formatter function for logger
+ * @returns {function} formatter function for node-logger
  */
 export default function monolog({
     channel,

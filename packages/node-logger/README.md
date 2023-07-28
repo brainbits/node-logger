@@ -13,7 +13,7 @@ You have to add a formatter to your `package.json`. E. g. the monolog formatter:
 
 ```json
 "nodeLogger": {
-    "formatter": "@tspm/node-logger-formatter-monolog"
+    "formatter": "@tspm/node-node-logger-node-logger-formatter-monolog"
 }
 ```
 
@@ -58,7 +58,7 @@ You can add more parameters to your `"nodeLogger": {}` section.
 ```json
 "nodeLogger": {
     "plugins": [
-        "@tspm/node-logger-plugin-<name>"
+        "@tspm/node-node-logger-plugin-<name>"
     ]
 }
 ```

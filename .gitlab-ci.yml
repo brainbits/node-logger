@@ -4,7 +4,7 @@ stages:
     - build
     - release
 
-image: node:lts-alpine
+image: node:18-alpine
 
 variables:
     GIT_STRATEGY: fetch
@@ -12,25 +12,24 @@ variables:
 setup:modules:
     stage: setup
     script:
-        - npm config set legacy-peer-deps true
-        - npx lerna bootstrap
+        - npm ci
     artifacts:
         name: "node_modules_$CI_COMMIT_REF_NAME"
         paths:
-            - packages/**/node_modules
+            - node_modules
         expire_in: 1 hour
 
 test:lint:
     stage: test
-    script: npx lerna run lint
+    script: npm run check:code-style -ws
 
 test:test:
     stage: test
-    script: npx lerna run test
+    script: npm test -ws
 
 build:package:
     stage: build
-    script: npx lerna run build
+    script: npm run build -ws
     artifacts:
         name: "dist_$CI_COMMIT_REF_NAME"
         paths:

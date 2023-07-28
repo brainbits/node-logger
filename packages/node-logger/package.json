@@ -1,15 +1,16 @@
 {
-    "name": "@tspm/node-logger-formatter-monolog",
-    "version": "2.2.5",
+    "name": "@tspm/node-logger",
+    "version": "2.3.1",
     "description": "Logger for node projects",
     "main": "dist/index.js",
+    "types": "src/types.d.ts",
     "scripts": {
+        "build": "babel ./src --out-dir ./dist --ignore test.js,setupTests.js,__mocks__/*",
         "build:watch": "npm run build -- --watch --source-maps",
-        "build": "babel src --out-dir ./dist --ignore test.js,setupTests.js,__mocks__/*",
-        "lint": "eslint ./src",
-        "coverage": "npm test -- --coverage",
-        "test:watch": "npm test -- --watch",
-        "test": "jest"
+        "check:code-style": "eslint ./src",
+        "test:coverage": "npm test -- --coverage",
+        "test": "jest",
+        "test:watch": "npm test -- --watch"
     },
     "babel": {
         "presets": [
@@ -21,6 +22,10 @@
                     }
                 }
             ]
+        ],
+        "plugins": [
+            "@babel/plugin-proposal-class-properties",
+            "@babel/plugin-proposal-export-default-from"
         ]
     },
     "eslintConfig": {
@@ -56,20 +61,17 @@
     "author": "Brainbits <moriarty@brainbits.net>",
     "license": "MIT",
     "dependencies": {
-        "date-fns": "^2.26.0",
-        "jest-get-type": "^27.3.1"
+        "deepmerge": "^4.2.2"
     },
     "devDependencies": {
         "@babel/cli": "^7.16.0",
         "@babel/eslint-parser": "^7.16.3",
+        "@babel/plugin-proposal-class-properties": "^7.16.0",
+        "@babel/plugin-proposal-export-default-from": "^7.16.0",
         "@babel/preset-env": "^7.16.4",
         "eslint": "^8.3.0",
-        "eslint-config-brainbits": "^3.0.9",
-        "eslint-config-brainbits-jest": "^3.0.9",
-        "eslint-plugin-babel": "^5.3.1",
-        "eslint-plugin-import": "^2.25.3",
-        "eslint-plugin-jest": "^25.3.0",
-        "eslint-plugin-promise": "^5.1.1",
-        "jest": "^27.3.1"
+        "eslint-config-brainbits": "^4.1.2",
+        "eslint-config-brainbits-jest": "^4.1.2",
+        "jest": "^29.6.2"
     }
 }

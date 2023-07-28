@@ -1,12 +1,15 @@
 {
-  "name": "@tspm/node-logger-monorepo",
-  "description": "Logger for node projects",
-  "repository": {
-    "type": "git",
-    "url": "git@gitlab.brainbits.net:tspm/node-logger.git"
-  },
-  "private": true,
-  "devDependencies": {
-    "lerna": "^3.13.1"
-  }
+    "name": "@tspm/node-logger-monorepo",
+    "description": "Logger for node projects",
+    "repository": {
+        "type": "git",
+        "url": "git@gitlab.brainbits.net:tspm/node-logger.git"
+    },
+    "private": true,
+    "devDependencies": {
+        "lerna": "^7.1.4"
+    },
+    "workspaces": [
+        "./packages/*"
+    ]
 }
