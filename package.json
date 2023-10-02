@@ -5,7 +5,7 @@
         "type": "git",
         "url": "git@github.com:brainbits/node-logger.git"
     },
-    "private": true,
+    "private": false,
     "devDependencies": {
         "lerna": "^7.1.4"
     },
