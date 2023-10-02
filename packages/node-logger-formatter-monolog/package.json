@@ -1,6 +1,6 @@
 {
     "name": "@brainbits/node-logger-formatter-monolog",
-    "version": "2.4.3",
+    "version": "2.4.4",
     "description": "Logger for node projects",
     "main": "dist/index.js",
     "scripts": {
