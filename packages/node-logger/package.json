@@ -1,6 +1,6 @@
 {
     "name": "@brainbits/node-logger",
-    "version": "2.4.2",
+    "version": "2.4.3",
     "description": "Logger for node projects",
     "main": "dist/index.js",
     "types": "src/types.d.ts",
