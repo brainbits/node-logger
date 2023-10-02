@@ -1,10 +1,10 @@
 # Logger
 ## Installation
-`yarn add @tspm/node-logger @tspm/node-logger-formatter-monolog`
+`yarn add @brainbits/node-logger @brainbits/node-logger-formatter-monolog`
 
 or
 
-`npm install -S @tspm/node-logger @tspm/node-logger-formatter-monolog`
+`npm install -S @brainbits/node-logger @brainbits/node-logger-formatter-monolog`
 
 ## Configuration
 ### Adding a formatter
@@ -13,7 +13,7 @@ You have to add a formatter to your `package.json`. E. g. the monolog formatter:
 
 ```json
 "nodeLogger": {
-    "formatter": "@tspm/node-node-logger-node-logger-formatter-monolog"
+    "formatter": "@brainbits/node-node-logger-node-logger-formatter-monolog"
 }
 ```
 
@@ -58,7 +58,7 @@ You can add more parameters to your `"nodeLogger": {}` section.
 ```json
 "nodeLogger": {
     "plugins": [
-        "@tspm/node-node-logger-plugin-<name>"
+        "@brainbits/node-node-logger-plugin-<name>"
     ]
 }
 ```
@@ -81,14 +81,14 @@ This will take the value of LOGGER_LEVEL or "info" as fallback. The fallback is 
 ## Usage
 ### Create a Logger instance
 ```javascript
-import { Logger } from '@tspm/node-logger';
+import { Logger } from '@brainbits/node-logger';
 
 const logger = new Logger();
 ```
 #### Arguments
 
 ```javascript
-import { Logger } from '@tspm/node-logger';
+import { Logger } from '@brainbits/node-logger';
 
 const config = {
     maxLevel: 'error',
@@ -111,7 +111,7 @@ Second argument is the entire configration object. You can override the configur
 
 ### Default logger
 ```javascript
-import Logger from '@tspm/node-logger';
+import Logger from '@brainbits/node-logger';
 
 const logger = new Logger();
 
@@ -125,7 +125,7 @@ logger.info('This is my message', meta);
 ### Timer feature
 There is a timer function `logger.start(<message>)`
 ```javascript
-import { logger } from '@tspm/node-logger';
+import { logger } from '@brainbits/node-logger';
 
 const meta = {
     foo: 'bar';

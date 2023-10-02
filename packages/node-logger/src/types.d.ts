@@ -1,4 +1,4 @@
-declare module '@tspm/node-logger' {
+declare module '@brainbits/node-logger' {
     type LogMethod = (message: unknown, meta?: Record<string, unknown>) => void;
 
     abstract class LogMethods {

@@ -1,5 +1,5 @@
 {
-    "name": "@tspm/node-logger-plugin-sentry",
+    "name": "@brainbits/node-logger-plugin-sentry",
     "version": "2.4.0",
     "description": "Logger plugin sentry",
     "main": "dist/index.js",
@@ -50,7 +50,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git@gitlab.brainbits.net:tspm/node-logger.git"
+        "url": "git@github.com:brainbits/node-logger.git"
     },
     "keywords": [
         "logger",
@@ -67,13 +67,13 @@
         "@babel/eslint-parser": "^7.16.3",
         "@babel/plugin-proposal-class-properties": "^7.16.0",
         "@babel/preset-env": "^7.16.4",
-        "@tspm/node-logger": "^2.4.0",
+        "@brainbits/node-logger": "^2.4.0",
         "eslint": "^8.3.0",
         "eslint-config-brainbits": "^4.1.2",
         "eslint-config-brainbits-jest": "^4.1.2",
         "jest": "^29.6.2"
     },
     "peerDependencies": {
-        "@tspm/node-logger": "^2.2.3"
+        "@brainbits/node-logger": "^2.2.3"
     }
 }

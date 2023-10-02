@@ -1,4 +1,4 @@
-import { Logger, HttpError } from '@tspm/node-logger';
+import { Logger, HttpError } from '@brainbits/node-logger';
 
 
 export default function test() {
@@ -15,4 +15,3 @@ export default function test() {
     logger.alert(new Error('test alert 1'), { foo: 'bar' });
     logger.emergency(new Error('test emergency'), { foo: 'bar' });
 }
-

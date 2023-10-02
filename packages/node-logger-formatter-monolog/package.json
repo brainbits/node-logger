@@ -1,5 +1,5 @@
 {
-    "name": "@tspm/node-logger-formatter-monolog",
+    "name": "@brainbits/node-logger-formatter-monolog",
     "version": "2.4.0",
     "description": "Logger for node projects",
     "main": "dist/index.js",
@@ -46,7 +46,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git@gitlab.brainbits.net:tspm/node-logger.git"
+        "url": "git@github.com:brainbits/node-logger.git"
     },
     "keywords": [
         "logger",

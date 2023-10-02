@@ -1,4 +1,4 @@
-declare module '@tspm/node-logger' {
+declare module '@brainbits/node-logger' {
     interface Config {
         sentry?: {
             debug?: boolean;

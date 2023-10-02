@@ -1,9 +1,9 @@
 {
-    "name": "@tspm/node-logger-monorepo",
+    "name": "@brainbits/node-logger-monorepo",
     "description": "Logger for node projects",
     "repository": {
         "type": "git",
-        "url": "git@gitlab.brainbits.net:tspm/node-logger.git"
+        "url": "git@github.com:brainbits/node-logger.git"
     },
     "private": true,
     "devDependencies": {

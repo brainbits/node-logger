@@ -2,21 +2,21 @@
 import fs from 'fs';
 import loadConfiguration from './config';
 // eslint-disable-next-line import/extensions
-import formatter from '/some/root/testpackage/node_modules/@tspm/node-node-logger-formatter-test';
+import formatter from '/some/root/testpackage/node_modules/@brainbits/node-node-logger-formatter-test';
 // eslint-disable-next-line import/extensions
-import Plugin from '/some/root/testpackage/node_modules/@tspm/node-node-logger-sentry-plugin';
+import Plugin from '/some/root/testpackage/node_modules/@brainbits/node-node-logger-sentry-plugin';
 import packageJson from '/some/root/testpackage/package.json';
 
 jest.mock('fs');
 
 jest.mock(
-    '/some/root/testpackage/node_modules/@tspm/node-node-logger-formatter-test',
+    '/some/root/testpackage/node_modules/@brainbits/node-node-logger-formatter-test',
     () => ({ default: jest.fn() }),
     { virtual: true },
 );
 
 jest.mock(
-    '/some/root/testpackage/node_modules/@tspm/node-node-logger-sentry-plugin',
+    '/some/root/testpackage/node_modules/@brainbits/node-node-logger-sentry-plugin',
     () => ({ default: jest.fn() }),
     { virtual: true },
 );
@@ -33,7 +33,7 @@ jest.mock('/some/root/testpackage/package.json', () => ({
         outputs: {
             error: 'stdout',
         },
-        formatter: '@tspm/node-node-logger-formatter-test',
+        formatter: '@brainbits/node-node-logger-formatter-test',
     },
 }), { virtual: true });
 
@@ -189,7 +189,7 @@ describe('loadConfiguration', () => {
         it('instantiates plugins', () => {
             const config = loadConfiguration({
                 formatter: jest.fn(),
-                plugins: ['@tspm/node-node-logger-sentry-plugin'],
+                plugins: ['@brainbits/node-node-logger-sentry-plugin'],
             });
 
             expect(config.plugins).toHaveLength(1);

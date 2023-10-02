@@ -16,9 +16,9 @@
             "debug": false
         },
         "plugins": [
-            "@tspm/node-logger-plugin-sentry"
+            "@brainbits/node-logger-plugin-sentry"
         ],
-        "formatter": "@tspm/node-logger-formatter-monolog"
+        "formatter": "@brainbits/node-logger-formatter-monolog"
     },
     "babel": {
         "presets": [
@@ -33,9 +33,9 @@
         ]
     },
     "dependencies": {
-        "@tspm/node-logger": "file:../../packages/logger",
-        "@tspm/node-logger-formatter-monolog": "file:../../packages/formatter-monolog",
-        "@tspm/node-logger-plugin-sentry": "file:../../packages/plugin-sentry",
+        "@brainbits/node-logger": "file:../../packages/logger",
+        "@brainbits/node-logger-formatter-monolog": "file:../../packages/formatter-monolog",
+        "@brainbits/node-logger-plugin-sentry": "file:../../packages/plugin-sentry",
         "node-fetch": "^2.3.0"
     },
     "devDependencies": {
