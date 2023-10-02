@@ -3,7 +3,7 @@ name: Release and Publish Packages
 on:
     push:
         branches:
-            - main
+            - '**'
         tags:
             - v*
 
