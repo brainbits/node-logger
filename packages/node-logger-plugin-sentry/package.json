@@ -75,5 +75,8 @@
     },
     "peerDependencies": {
         "@brainbits/node-logger": "^2.2.3"
+    },
+    "publishConfig": {
+        "access": "public"
     }
 }
