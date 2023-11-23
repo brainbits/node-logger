@@ -7,7 +7,7 @@
     },
     "private": false,
     "devDependencies": {
-        "lerna": "^7.1.4"
+        "lerna": "^8.0.0"
     },
     "workspaces": [
         "./packages/*"
