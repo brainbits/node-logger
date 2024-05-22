@@ -43,7 +43,7 @@ export default class PluginSentry {
             maxBreadcrumbs: this.config.sentry.maxBreadcrumbs,
             integrations(integrations) {
                 return integrations
-                    .filter(integration => !(integration instanceof Sentry.Integrations.Console));
+                    .filter(integration => integration.name !== 'Console');
             },
         });
     }
