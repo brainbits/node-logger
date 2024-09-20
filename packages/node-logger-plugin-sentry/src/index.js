@@ -35,17 +35,19 @@ export default class PluginSentry {
             ...rest,
         };
 
-        Sentry.init({
-            debug: this.config.sentry.debug,
-            dsn: this.config.sentry.dsn,
-            environment: this.config.sentry.environment,
-            release: this.config.sentry.release,
-            maxBreadcrumbs: this.config.sentry.maxBreadcrumbs,
-            integrations(integrations) {
-                return integrations
-                    .filter(integration => integration.name !== 'Console');
-            },
-        });
+        if (!Sentry.isInitialized()) {
+            Sentry.init({
+                debug: this.config.sentry.debug,
+                dsn: this.config.sentry.dsn,
+                environment: this.config.sentry.environment,
+                release: this.config.sentry.release,
+                maxBreadcrumbs: this.config.sentry.maxBreadcrumbs,
+                integrations(integrations) {
+                    return integrations
+                        .filter(integration => integration.name !== 'Console');
+                },
+            });
+        }
     }
 
     log(event) {
