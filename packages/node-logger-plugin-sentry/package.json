@@ -1,6 +1,6 @@
 {
     "name": "@brainbits/node-logger-plugin-sentry",
-    "version": "2.5.0",
+    "version": "2.5.1",
     "description": "Logger plugin sentry",
     "main": "dist/index.js",
     "types": "src/types.d.ts",
