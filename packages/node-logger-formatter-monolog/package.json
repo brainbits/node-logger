@@ -56,7 +56,7 @@
     "author": "Brainbits <moriarty@brainbits.net>",
     "license": "MIT",
     "dependencies": {
-        "date-fns": "^3.6.0",
+        "date-fns": "^4.0.0",
         "jest-get-type": "^29.4.3"
     },
     "devDependencies": {
