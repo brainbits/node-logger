@@ -63,7 +63,7 @@
         "@babel/cli": "^7.16.0",
         "@babel/eslint-parser": "^7.16.3",
         "@babel/preset-env": "^7.16.4",
-        "eslint": "^8.3.0",
+        "eslint": "^9.0.0",
         "eslint-config-brainbits": "^4.1.2",
         "eslint-config-brainbits-jest": "^4.1.2",
         "jest": "^29.6.2"
