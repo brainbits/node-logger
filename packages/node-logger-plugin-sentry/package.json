@@ -60,7 +60,7 @@
     "author": "Brainbits <moriarty@brainbits.net>",
     "license": "MIT",
     "dependencies": {
-        "@sentry/node": "^8.2.1"
+        "@sentry/node": "^9.0.0"
     },
     "devDependencies": {
         "@babel/cli": "^7.16.0",
