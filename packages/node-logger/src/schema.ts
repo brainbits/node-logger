@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import type { Formatter } from './types.js';
 
+/**
+ * The syslog severity levels (RFC 5424), from the most to the least severe
+ */
 export const logLevelSchema = z.enum([
     'emergency',
     'alert',
@@ -12,11 +15,19 @@ export const logLevelSchema = z.enum([
     'debug',
 ]);
 
+export const logLevels = logLevelSchema.options;
+
 const outputSchema = z.enum(['stdout', 'stderr']);
+
+export const userSchema = z.looseObject({
+    id: z.union([z.string(), z.number()]).optional(),
+    username: z.string().optional(),
+    email: z.string().optional(),
+    ip_address: z.string().optional(),
+});
 
 export const configShape = {
     channel: z.string().default('unknown'),
-    levels: z.array(logLevelSchema).nonempty().default([...logLevelSchema.options]),
     maxLevel: logLevelSchema.default('info'),
     outputs: z.partialRecord(logLevelSchema, outputSchema).default({
         emergency: 'stderr',
@@ -29,7 +40,8 @@ export const configShape = {
     ], { error: 'Expected the module name of a formatter or a formatter function' }),
     plugins: z.array(z.string().nonempty()).default([]),
     context: z.looseObject({
-        user: z.union([z.string(), z.record(z.string(), z.unknown())]).optional(),
+        // A string or number is used as id
+        user: z.union([z.string(), z.number(), userSchema]).optional(),
     }).optional(),
 };
 
@@ -41,24 +53,5 @@ export type CoreConfigOutput = z.output<z.ZodObject<typeof configShape>>;
  * Unknown keys are rejected.
  */
 export function createConfigSchema(pluginShape: z.ZodRawShape = {}) {
-    return z.strictObject({ ...pluginShape, ...configShape }).check((ctx) => {
-        const { levels, maxLevel, timerLevel, outputs } = ctx.value;
-        const issue = (path: PropertyKey[], message: string) => {
-            ctx.issues.push({ code: 'custom', input: ctx.value, path, message });
-        };
-
-        if (!levels.includes(maxLevel)) {
-            issue(['maxLevel'], `"${maxLevel}" is not one of the configured levels`);
-        }
-
-        if (!levels.includes(timerLevel)) {
-            issue(['timerLevel'], `"${timerLevel}" is not one of the configured levels`);
-        }
-
-        Object.keys(outputs)
-            .filter(level => !(levels as string[]).includes(level))
-            .forEach((level) => {
-                issue(['outputs', level], `"${level}" is not one of the configured levels`);
-            });
-    });
+    return z.strictObject({ ...pluginShape, ...configShape });
 }

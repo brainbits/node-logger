@@ -72,33 +72,25 @@ describe('loadConfiguration', () => {
         it.each([
             ['the formatter is missing', { formatter: undefined }, 'formatter'],
             ['the formatter has a wrong type', { formatter: 42 }, 'formatter'],
-            ['the levels are null', { levels: null }, 'levels'],
-            ['the levels are empty', { levels: [] }, 'levels'],
-            ['a level is unknown', { levels: ['error', 'fatal'] }, 'levels[1]'],
             ['the maxLevel is null', { maxLevel: null }, 'maxLevel'],
             ['the maxLevel is no valid level', { maxLevel: 'foobar' }, 'maxLevel'],
-            ['the maxLevel is not configured as level', { levels: ['error'], timerLevel: 'error' }, 'maxLevel'],
-            ['the timerLevel is no valid level', { timerLevel: 'foobar' }, 'timerLevel'],
-            ['the timerLevel is not configured as level', { levels: ['info'], maxLevel: 'info' }, 'timerLevel'],
+            ['the timerLevel is no valid level', { timerLevel: 'fatal' }, 'timerLevel'],
             ['the outputs are null', { outputs: null }, 'outputs'],
             ['an output is configured for an unknown level', { outputs: { foobar: 'stdout' } }, 'outputs'],
-            ['an output is configured for a level that is not configured', {
-                levels: ['error', 'debug'],
-                maxLevel: 'error',
-                outputs: { info: 'stdout' },
-            }, 'outputs.info'],
             ['an output is anything but stdout or stderr', { outputs: { error: 'stdin' } }, 'outputs.error'],
             ['the channel is no string', { channel: 42 }, 'channel'],
             ['the plugins are no array', { plugins: 'test-plugin' }, 'plugins'],
             ['the context is no object', { context: 'foo' }, 'context'],
+            ['the user of the context has a wrong type', { context: { user: { id: true } } }, 'context.user'],
+            ['the user of the context is a boolean', { context: { user: true } }, 'context.user'],
         ])('throws an error if %s', (_, config, path) => {
             expect(() => loadConfiguration(invalid({ formatter, ...config })))
                 .toThrow(new RegExp(`^Invalid node-logger configuration:\\n[^]*→ at ${path.replace(/[.[\]]/g, '\\$&')}$`, 'm'));
         });
 
-        it('throws an error for unknown options', () => {
-            expect(() => loadConfiguration(invalid({ formatter, maxlevel: 'debug' })))
-                .toThrow('✖ Unrecognized key: "maxlevel"');
+        it.each(['maxlevel', 'levels'])('throws an error for the unknown option %s', (option) => {
+            expect(() => loadConfiguration(invalid({ formatter, [option]: 'debug' })))
+                .toThrow(`✖ Unrecognized key: "${option}"`);
         });
 
         it('reports all problems at once', () => {
@@ -115,21 +107,15 @@ describe('loadConfiguration', () => {
         });
     });
 
+    it.each(['foobar', 42, { id: 42 }])('accepts %j as user of the context', (user) => {
+        expect(loadConfiguration({ formatter, context: { user } }).context).toEqual({ user });
+    });
+
     it('resolves to default configuration', () => {
         const config = loadConfiguration({ formatter });
 
         expect(config).toMatchObject({
             channel: 'unknown',
-            levels: [
-                'emergency',
-                'alert',
-                'critical',
-                'error',
-                'warning',
-                'notice',
-                'info',
-                'debug',
-            ],
             maxLevel: 'info',
             outputs: {
                 emergency: 'stderr',
@@ -149,11 +135,7 @@ describe('loadConfiguration', () => {
     describe('with package.json', () => {
         const nodeLogger = {
             channel: 'test-channel',
-            levels: [
-                'error',
-                'info',
-                'debug',
-            ],
+            maxLevel: 'debug',
             outputs: {
                 error: 'stdout',
             },
@@ -175,8 +157,7 @@ describe('loadConfiguration', () => {
 
             expect(config).toMatchObject({
                 channel: nodeLogger.channel,
-                levels: nodeLogger.levels,
-                maxLevel: 'info',
+                maxLevel: 'debug',
                 outputs: {
                     error: 'stdout',
                 },

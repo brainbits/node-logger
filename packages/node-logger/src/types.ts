@@ -1,25 +1,36 @@
 import type { z } from 'zod';
-import type { CoreConfigInput, CoreConfigOutput, logLevelSchema } from './schema.js';
+import type { CoreConfigInput, CoreConfigOutput, logLevelSchema, userSchema } from './schema.js';
 
 export type LogLevel = z.infer<typeof logLevelSchema>;
 
-export type Meta = Record<string, unknown>;
+export type LogMessage = string | Error;
 
-export type LogMethod = (message: unknown, meta?: Meta) => void;
+/**
+ * Additional data of a log event.
+ *
+ * This is an interface, so plugins can add the keys they handle:
+ * `declare module '@brainbits/node-logger' { interface Meta { myKey?: string } }`
+ */
+export interface Meta {
+    [key: string]: unknown;
+}
+
+export type User = z.infer<typeof userSchema>;
 
 export type Output = 'stdout' | 'stderr';
 
 export interface LogEvent {
     channel: string;
     level: LogLevel;
-    message: unknown;
+    message: LogMessage;
     meta?: Meta;
 }
 
 export type Formatter = (event: LogEvent) => string;
 
 export interface Plugin {
-    log(event: LogEvent): void;
+    /** Gets every log event, optional for plugins that only hook into the configuration */
+    log?(event: LogEvent): void;
 }
 
 /**

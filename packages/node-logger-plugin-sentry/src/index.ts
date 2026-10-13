@@ -1,5 +1,5 @@
-import { logLevelSchema } from '@brainbits/node-logger';
-import type { LogEvent, Plugin, ValidatedConfig } from '@brainbits/node-logger';
+import { logLevels, logLevelSchema } from '@brainbits/node-logger';
+import type { LogEvent, LogLevel, Plugin, User, ValidatedConfig } from '@brainbits/node-logger';
 import * as Sentry from '@sentry/node';
 import { z } from 'zod';
 
@@ -33,7 +33,25 @@ declare module '@brainbits/node-logger' {
     interface Config {
         sentry?: z.input<typeof sentryConfigSchema>;
     }
+
+    interface Meta {
+        /** Tags of the Sentry event */
+        tags?: Record<string, string>;
+        /** User of the Sentry event, overrides the user of the context. A string or number is used as id. */
+        user?: string | number | User;
+    }
 }
+
+const severityLevels: Record<LogLevel, Sentry.SeverityLevel> = {
+    emergency: 'fatal',
+    alert: 'fatal',
+    critical: 'fatal',
+    error: 'error',
+    warning: 'warning',
+    notice: 'info',
+    info: 'info',
+    debug: 'debug',
+};
 
 export default class PluginSentry implements Plugin {
     static readonly configSchema = z.object({
@@ -50,13 +68,6 @@ export default class PluginSentry implements Plugin {
         this.config = config;
         // Already validated by the logger, parsed again to get the defaults when the plugin is used on its own
         this.sentry = sentryConfigSchema.parse(config.sentry ?? {});
-
-        if (!config.levels.includes(this.sentry.exceptionLevel)) {
-            throw new Error(
-                `Invalid node-logger configuration: sentry.exceptionLevel "${this.sentry.exceptionLevel}" `
-                + 'is not one of the configured levels',
-            );
-        }
 
         if (!Sentry.isInitialized()) {
             Sentry.init({
@@ -83,9 +94,7 @@ export default class PluginSentry implements Plugin {
     }
 
     private isException({ level }: LogEvent): boolean {
-        const { levels } = this.config;
-
-        return levels.indexOf(this.sentry.exceptionLevel) >= levels.indexOf(level);
+        return logLevels.indexOf(this.sentry.exceptionLevel) >= logLevels.indexOf(level);
     }
 
     private logException({ level, message, meta = {} }: LogEvent): void {
@@ -113,21 +122,28 @@ export default class PluginSentry implements Plugin {
                 scope.setTag(key, value);
             });
 
-            Object.entries(tags as Record<string, string>).forEach(([key, value]) => {
+            Object.entries(tags).forEach(([key, value]) => {
                 scope.setTag(key, value);
             });
 
             this.breadCrumbs.forEach((breadCrumb) => {
                 Sentry.addBreadcrumb({
                     category: breadCrumb.level,
-                    message: breadCrumb.message as string,
+                    message: String(breadCrumb.message),
                     level: sentry.breadcrumbLevelMap[breadCrumb.level],
                     data: breadCrumb.meta,
                 });
             });
 
-            scope.setLevel(level as Sentry.SeverityLevel);
-            Sentry.captureException(message);
+            // Sentry knows fewer levels, the original one is kept as tag
+            scope.setLevel(severityLevels[level]);
+            scope.setTag('logLevel', level);
+
+            if (message instanceof Error) {
+                Sentry.captureException(message);
+            } else {
+                Sentry.captureMessage(message);
+            }
         });
     }
 
@@ -145,21 +161,17 @@ export default class PluginSentry implements Plugin {
         }
     }
 
-    private ensureUser(user: unknown): Sentry.User | null {
-        if (!user) {
-            return null;
-        }
-
+    private ensureUser(user: string | number | User): Sentry.User {
         if (typeof user !== 'object') {
-            return { id: user as string | number };
+            return { id: user };
         }
 
-        const keys = ['id', 'username', 'email', 'ip_address'];
+        const { id, username, email, ip_address: ipAddress } = user;
 
-        if (!Object.keys(user).some(key => keys.includes(key))) {
+        if (id === undefined && username === undefined && email === undefined && ipAddress === undefined) {
             return { ...user, id: 'unknown' };
         }
 
-        return user as Sentry.User;
+        return user;
     }
 }

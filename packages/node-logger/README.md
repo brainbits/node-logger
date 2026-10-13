@@ -34,21 +34,7 @@ You can add more parameters to your `"nodeLogger": {}` section.
 ```timerLevel``` Timer level (string)
 >Default: `debug`
 
-```levels``` Levels (sorted array)
-> Default:
-```javascript [
-    'emergency',
-    'alert',
-    'critical',
-    'error',
-    'warning',
-    'notice',
-    'info', // max level default
-    'debug',
-]
-```
-
-```outputs``` Outputs (object)
+```outputs``` Outputs (object). A level without output uses the output of the next more severe level.
 > Default:
 ```javascript
 {
@@ -110,22 +96,13 @@ import { Logger } from '@brainbits/node-logger';
 
 const config = {
     maxLevel: 'error',
-    level: [
-        'error',
-        'info',
-        'debug',
-    ],
-    formatter: (event) => {
-        console.log(event)
-    }
+    formatter: event => JSON.stringify(event),
 };
 
 const logger = new Logger(config);
 ```
 
-First argument is a string to define your context.
-
-Second argument is the entire configration object. You can override the configuration in your `package.json` here.
+The configuration object overrides the configuration in your `package.json`.
 
 ### Default logger
 ```javascript
@@ -134,20 +111,24 @@ import { Logger } from '@brainbits/node-logger';
 const logger = new Logger();
 
 const meta = {
-    foo: 'bar';
+    foo: 'bar',
 };
 
 logger.info('This is my message', meta);
+
+// The level can also be passed as argument
+logger.log('info', 'This is my message', meta);
 ```
 
 ### Timer feature
-There is a timer function `logger.start(<message>)`
+There is a timer function `logger.start(<label>)`. `logger.stop(<label>, <meta>)` logs the elapsed time with the
+`timerLevel`.
 ```javascript
 import { Logger } from '@brainbits/node-logger';
 
 const logger = new Logger();
 const meta = {
-    foo: 'bar';
+    foo: 'bar',
 };
 
 logger.start('timer');
@@ -167,7 +148,7 @@ function loadAsyncShit() {
 `logger.<level>(<message>, <meta>)`
 
 ### Levels `<level>`
-Pick one of these levels (default):
+The syslog severity levels (RFC 5424), from the most to the least severe:
 
 - 0: `emergency`
 - 1: `alert`
@@ -179,7 +160,15 @@ Pick one of these levels (default):
 - 7: `debug` (default: no ouput [maxLevel])
 
 ### Message `<message>`
-Message can be a `string`, `array` or `object` (and `Error` object)
+Message is a `string` or an `Error`. Errors are logged with their stack trace and the chain of errors given as
+`cause`. A `context` property of an error is logged as well:
+
+```javascript
+const error = new Error('Loading the order failed', { cause: requestError });
+error.context = { orderId: 42 };
+
+logger.error(error);
+```
 
 ### Meta `<meta>`
 Must be an object. Used for additional context data.
@@ -188,7 +177,7 @@ Must be an object. Used for additional context data.
 logger.info('This is my message', { foo: 'bar' });
 ```
 
-Caution: If message is an object and meta has the same property, meta will override this property.
+Caution: If the context of an error and meta have the same property, meta will override this property.
 
 ## Writing plugins
 

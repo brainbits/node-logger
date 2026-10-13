@@ -39,9 +39,7 @@ async function goGetIt(url) {
         logger.error(error, {
             tags: {
                 url,
-                foo: {
-                    bar: 'lib'
-                }
+                foo: 'bar'
             }
         });
     } finally {

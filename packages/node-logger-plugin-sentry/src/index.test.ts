@@ -9,6 +9,7 @@ vi.mock('@sentry/node', () => ({
     withScope: vi.fn(),
     addBreadcrumb: vi.fn(),
     captureException: vi.fn(),
+    captureMessage: vi.fn(),
 }));
 
 describe('PluginSentry', () => {
@@ -21,11 +22,6 @@ describe('PluginSentry', () => {
             maxLevel: 'error',
             timerLevel: 'debug',
             outputs: {},
-            levels: [
-                'error',
-                'info',
-                'debug',
-            ],
             sentry: {
                 maxBreadcrumbs: 3,
                 tags: {},
@@ -101,14 +97,6 @@ describe('PluginSentry', () => {
         expect(sentryConfigSchema.safeParse(sentry).success).toBe(false);
     });
 
-    it('should throw an error if the exceptionLevel is not one of the configured levels', () => {
-        config.sentry = { ...config.sentry, exceptionLevel: 'critical' };
-
-        expect(() => new PluginSentry(config)).toThrow(
-            'Invalid node-logger configuration: sentry.exceptionLevel "critical" is not one of the configured levels',
-        );
-    });
-
     it('should not initialize Sentry twice', () => {
         vi.mocked(Sentry.isInitialized).mockReturnValueOnce(true);
 
@@ -128,6 +116,50 @@ describe('PluginSentry', () => {
         });
 
         expect(Sentry.captureException).toHaveBeenCalledWith(error);
+    });
+
+    it('should call Sentry.captureMessage for strings', () => {
+        const plugin = new PluginSentry(config);
+
+        plugin.log({
+            channel: 'test',
+            message: 'error message',
+            level: 'error',
+        });
+
+        expect(Sentry.captureMessage).toHaveBeenCalledWith('error message');
+        expect(Sentry.captureException).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['emergency', 'fatal'],
+        ['alert', 'fatal'],
+        ['critical', 'fatal'],
+        ['error', 'error'],
+    ] as const)('should map the level %s to the Sentry level %s and keep it as tag', (level, sentryLevel) => {
+        const plugin = new PluginSentry(config);
+
+        plugin.log({
+            channel: 'test',
+            message: new Error('error message'),
+            level,
+        });
+
+        expect(scope.setLevel).toHaveBeenCalledWith(sentryLevel);
+        expect(scope.setTag).toHaveBeenCalledWith('logLevel', level);
+    });
+
+    it('should only send events up to the exceptionLevel', () => {
+        config.sentry = { ...config.sentry, exceptionLevel: 'critical' };
+        const plugin = new PluginSentry(config);
+
+        plugin.log({
+            channel: 'test',
+            message: new Error('error message'),
+            level: 'error',
+        });
+
+        expect(Sentry.captureException).not.toHaveBeenCalled();
     });
 
     it('should set correct level', () => {
@@ -154,6 +186,21 @@ describe('PluginSentry', () => {
         });
 
         expect(scope.setUser).toHaveBeenCalledWith({ id: 'foobar' });
+    });
+
+    it('should set correct user if given number', () => {
+        config.context = { user: 42 };
+
+        const plugin = new PluginSentry(config);
+
+        plugin.log({
+            channel: 'test',
+            message: new Error('error message'),
+            level: 'error',
+            meta: { user: 43 },
+        });
+
+        expect(scope.setUser).toHaveBeenCalledWith({ id: 43 });
     });
 
     it('should set correct user if object with id given', () => {
@@ -280,5 +327,19 @@ describe('PluginSentry', () => {
             message: 'some message',
             data: { foo: 'bar' },
         });
+    });
+
+    it('should set an unknown id for users without identifying keys', () => {
+        config.context = { user: { name: 'foobar' } };
+
+        const plugin = new PluginSentry(config);
+
+        plugin.log({
+            channel: 'test',
+            message: new Error('error message'),
+            level: 'error',
+        });
+
+        expect(scope.setUser).toHaveBeenCalledWith({ name: 'foobar', id: 'unknown' });
     });
 });

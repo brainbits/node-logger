@@ -1,4 +1,4 @@
-import { Logger, HttpError } from '@brainbits/node-logger';
+import { Logger } from '@brainbits/node-logger';
 
 
 export default function test() {
@@ -11,7 +11,7 @@ export default function test() {
     logger.warning('test warning', { foo: 'bar' });
     logger.stop('Stop watch');
     logger.error(new Error('test error'), { foo: 'bar' });
-    logger.critical(new HttpError('test critical'), { foo: 'bar' });
+    logger.critical(new Error('test critical', { cause: new TypeError('test cause') }), { foo: 'bar' });
     logger.alert(new Error('test alert 1'), { foo: 'bar' });
     logger.emergency(new Error('test emergency'), { foo: 'bar' });
 }
