@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import merge from 'deepmerge';
-import type { Config, Formatter, MergedConfig, Plugin, PluginConstructor, ResolvedConfig } from './types.js';
+import { z } from 'zod';
+import { configShape, createConfigSchema } from './schema.js';
+import type { Config, Formatter, PluginConstructor, ResolvedConfig, ValidatedConfig } from './types.js';
 
 type ModuleRequire = ReturnType<typeof createRequire>;
 
@@ -12,32 +14,10 @@ interface PackageConfigDefinition {
     config: Config;
 }
 
-const defaultConfig: MergedConfig = {
-    channel: 'unknown',
-    levels: [
-        'emergency',
-        'alert',
-        'critical',
-        'error',
-        'warning',
-        'notice',
-        'info',
-        'debug',
-    ],
-    maxLevel: 'info',
-    outputs: {
-        emergency: 'stderr',
-        warning: 'stdout',
-    },
-    timerLevel: 'debug',
-    formatter: undefined,
-    plugins: [],
-};
-
 function getConfigFromPackage(packageJsonPath: string): Config {
     const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as { name?: string; nodeLogger?: Config };
 
-    return { channel: pkg.name || defaultConfig.channel, ...pkg.nodeLogger };
+    return { ...(pkg.name ? { channel: pkg.name } : {}), ...pkg.nodeLogger };
 }
 
 function findPackageJson(): string | null {
@@ -80,7 +60,7 @@ function loadModule<T>(moduleName: string, require: ModuleRequire | null): T {
     return (require(moduleName) as { default: T }).default;
 }
 
-function loadFormatter(config: MergedConfig, { path, require }: PackageConfigDefinition): Formatter {
+function loadFormatter(config: ValidatedConfig, { path, require }: PackageConfigDefinition): Formatter {
     const { formatter } = config;
 
     if (typeof formatter === 'function') {
@@ -92,7 +72,7 @@ function loadFormatter(config: MergedConfig, { path, require }: PackageConfigDef
     }
 
     try {
-        return loadModule<Formatter>(formatter!, require);
+        return loadModule<Formatter>(formatter, require);
     } catch (error) {
         throw new Error(`Formatter ${formatter} not found in ${path}: ${(error as Error).message}`, { cause: error });
     }
@@ -104,13 +84,6 @@ function loadPlugin(pluginName: string, { path, require }: PackageConfigDefiniti
     } catch (error) {
         throw new Error(`Plugin ${pluginName} not found in ${path}: ${(error as Error).message}`, { cause: error });
     }
-}
-
-function loadPlugins(config: MergedConfig, definition: PackageConfigDefinition): Plugin[] {
-    return (config.plugins ?? []).map((pluginName) => {
-        const PluginClass = loadPlugin(pluginName, definition);
-        return new PluginClass(config);
-    });
 }
 
 function deepParseEnv<T>(config: T): T {
@@ -147,36 +120,44 @@ function deepParseEnv<T>(config: T): T {
     ) as T;
 }
 
-function assertConfig(config: MergedConfig): void {
-    if (!config.formatter) {
-        throw new Error('Invalid formatter: No formatter found in configuration');
+/**
+ * Collects the options the plugins add to the configuration
+ */
+function getPluginShape(pluginNames: string[], pluginClasses: PluginConstructor[]): z.ZodRawShape {
+    const owners = new Map<string, string>(Object.keys(configShape).map(key => [key, 'node-logger']));
+    const shape: Record<string, z.ZodType> = {};
+
+    pluginClasses.forEach((PluginClass, index) => {
+        Object.entries<z.ZodType>(PluginClass.configSchema?.shape ?? {}).forEach(([key, schema]) => {
+            const owner = owners.get(key);
+
+            if (owner) {
+                throw new Error(`Plugin ${pluginNames[index]} must not redefine the option "${key}" of ${owner}`);
+            }
+
+            owners.set(key, pluginNames[index]);
+            shape[key] = schema;
+        });
+    });
+
+    return shape;
+}
+
+function validate<T extends z.ZodType>(schema: T, config: unknown): z.output<T> {
+    const result = schema.safeParse(config);
+
+    if (!result.success) {
+        throw new Error(`Invalid node-logger configuration:\n${z.prettifyError(result.error)}`, {
+            cause: result.error,
+        });
     }
 
-    if (!Array.isArray(config.levels) || config.levels.length === 0) {
-        throw new Error('Invalid levels: No levels were configured');
-    }
-
-    if (!config.maxLevel || !config.levels.includes(config.maxLevel)) {
-        throw new Error(`Invalid maxLevel: ${config.maxLevel}`);
-    }
-
-    if (!config.timerLevel || !config.levels.includes(config.timerLevel)) {
-        throw new Error(`Invalid timerLevel: ${config.timerLevel}`);
-    }
-
-    if (!config.outputs || Object.keys(config.outputs).some(level => !(config.levels as string[]).includes(level))) {
-        throw new Error('Invalid outputs: Outputs can only be configured for existing log levels');
-    }
-
-    if (Object.values(config.outputs).some(output => !['stdout', 'stderr'].includes(output))) {
-        throw new Error('Invalid outputs: Output must be stdout or stderr');
-    }
+    return result.data;
 }
 
 export default function loadConfiguration(config: Config = {}): ResolvedConfig {
     const packageJsonConfigDefinition = loadConfigFromPackage();
-    const merged = deepParseEnv(merge.all<MergedConfig>([
-        defaultConfig,
+    const merged = deepParseEnv(merge.all<Config>([
         packageJsonConfigDefinition.config,
         config,
     ], {
@@ -187,11 +168,15 @@ export default function loadConfiguration(config: Config = {}): ResolvedConfig {
         },
     }));
 
-    assertConfig(merged);
+    // The plugins have to be loaded first, as they add their options to the schema
+    const { plugins: pluginNames } = validate(z.looseObject({ plugins: configShape.plugins }), merged);
+    const pluginClasses = pluginNames.map(pluginName => loadPlugin(pluginName, packageJsonConfigDefinition));
+    const schema = createConfigSchema(getPluginShape(pluginNames, pluginClasses));
+    const validated = validate(schema, merged) as ValidatedConfig;
 
     return {
-        ...merged,
-        formatter: loadFormatter(merged, packageJsonConfigDefinition),
-        plugins: loadPlugins(merged, packageJsonConfigDefinition),
+        ...validated,
+        formatter: loadFormatter(validated, packageJsonConfigDefinition),
+        plugins: pluginClasses.map(PluginClass => new PluginClass(validated)),
     };
 }

@@ -1,11 +1,20 @@
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import loadConfiguration from './config.js';
-import type { Config, LogLevel, Output } from './types.js';
+import type { Config } from './types.js';
 
 let root: string;
+const zodDir = dirname(createRequire(import.meta.url).resolve('zod/package.json'));
+
+/**
+ * Accepts invalid configurations in the tests
+ */
+function invalid(config: unknown): Config {
+    return config as Config;
+}
 
 /**
  * Creates a project with a package.json and installed formatter and plugin packages (ES modules)
@@ -23,6 +32,22 @@ function createProject(name: string, packageJson: Record<string, unknown>): stri
     fs.writeFileSync(join(projectDir, 'package.json'), JSON.stringify(packageJson));
     writeModule('test-formatter', 'export default function testFormatter() { return \'formatted\'; }');
     writeModule('test-plugin', 'export default class TestPlugin { constructor(config) { this.config = config; } }');
+    writeModule('schema-plugin', `
+        import { z } from 'zod';
+        export default class SchemaPlugin {
+            static configSchema = z.object({
+                schemaPlugin: z.strictObject({ size: z.coerce.number().default(10) }).prefault({}),
+            });
+            constructor(config) { this.config = config; }
+        }
+    `);
+    writeModule('conflicting-plugin', `
+        import { z } from 'zod';
+        export default class ConflictingPlugin {
+            static configSchema = z.object({ channel: z.number() });
+        }
+    `);
+    fs.symlinkSync(zodDir, join(projectDir, 'node_modules', 'zod'));
 
     return projectDir;
 }
@@ -44,73 +69,49 @@ describe('loadConfiguration', () => {
     });
 
     describe('validation', () => {
-        it('throws an error if formatter is missing', () => {
-            const expectedError = new Error('Invalid formatter: No formatter found in configuration');
-
-            expect(() => loadConfiguration()).toThrow(expectedError);
+        it.each([
+            ['the formatter is missing', { formatter: undefined }, 'formatter'],
+            ['the formatter has a wrong type', { formatter: 42 }, 'formatter'],
+            ['the levels are null', { levels: null }, 'levels'],
+            ['the levels are empty', { levels: [] }, 'levels'],
+            ['a level is unknown', { levels: ['error', 'fatal'] }, 'levels[1]'],
+            ['the maxLevel is null', { maxLevel: null }, 'maxLevel'],
+            ['the maxLevel is no valid level', { maxLevel: 'foobar' }, 'maxLevel'],
+            ['the maxLevel is not configured as level', { levels: ['error'], timerLevel: 'error' }, 'maxLevel'],
+            ['the timerLevel is no valid level', { timerLevel: 'foobar' }, 'timerLevel'],
+            ['the timerLevel is not configured as level', { levels: ['info'], maxLevel: 'info' }, 'timerLevel'],
+            ['the outputs are null', { outputs: null }, 'outputs'],
+            ['an output is configured for an unknown level', { outputs: { foobar: 'stdout' } }, 'outputs'],
+            ['an output is configured for a level that is not configured', {
+                levels: ['error', 'debug'],
+                maxLevel: 'error',
+                outputs: { info: 'stdout' },
+            }, 'outputs.info'],
+            ['an output is anything but stdout or stderr', { outputs: { error: 'stdin' } }, 'outputs.error'],
+            ['the channel is no string', { channel: 42 }, 'channel'],
+            ['the plugins are no array', { plugins: 'test-plugin' }, 'plugins'],
+            ['the context is no object', { context: 'foo' }, 'context'],
+        ])('throws an error if %s', (_, config, path) => {
+            expect(() => loadConfiguration(invalid({ formatter, ...config })))
+                .toThrow(new RegExp(`^Invalid node-logger configuration:\\n[^]*→ at ${path.replace(/[.[\]]/g, '\\$&')}$`, 'm'));
         });
 
-        it('throws an error if levels are null', () => {
-            const expectedError = new Error('Invalid levels: No levels were configured');
-
-            expect(() => loadConfiguration({ formatter, levels: null as unknown as LogLevel[] }))
-                .toThrow(expectedError);
+        it('throws an error for unknown options', () => {
+            expect(() => loadConfiguration(invalid({ formatter, maxlevel: 'debug' })))
+                .toThrow('✖ Unrecognized key: "maxlevel"');
         });
 
-        it('throws an error if levels are an empty array', () => {
-            const expectedError = new Error('Invalid levels: No levels were configured');
+        it('reports all problems at once', () => {
+            let message = '';
 
-            expect(() => loadConfiguration({ formatter, levels: [] }))
-                .toThrow(expectedError);
-        });
+            try {
+                loadConfiguration(invalid({ formatter, channel: 42, maxLevel: 'foobar' }));
+            } catch (error) {
+                message = (error as Error).message;
+            }
 
-        it('throws an error if no maxLevel is configured', () => {
-            const expectedError = new Error('Invalid maxLevel: null');
-
-            expect(() => loadConfiguration({ formatter, maxLevel: null as unknown as LogLevel }))
-                .toThrow(expectedError);
-        });
-
-        it('throws an error if maxLevel is no valid level', () => {
-            const expectedError = new Error('Invalid maxLevel: foobar');
-
-            expect(() => loadConfiguration({ formatter, maxLevel: 'foobar' as LogLevel }))
-                .toThrow(expectedError);
-        });
-
-        it('throws an error if no timerLevel is configured', () => {
-            const expectedError = new Error('Invalid timerLevel: null');
-
-            expect(() => loadConfiguration({ formatter, timerLevel: null as unknown as LogLevel }))
-                .toThrow(expectedError);
-        });
-
-        it('throws an error if timerLevel is no valid level', () => {
-            const expectedError = new Error('Invalid timerLevel: foobar');
-
-            expect(() => loadConfiguration({ formatter, timerLevel: 'foobar' as LogLevel }))
-                .toThrow(expectedError);
-        });
-
-        it('throws an error if no outputs were configured', () => {
-            const expectedError = new Error('Invalid outputs: Outputs can only be configured for existing log levels');
-
-            expect(() => loadConfiguration({ formatter, outputs: null as unknown as Config['outputs'] }))
-                .toThrow(expectedError);
-        });
-
-        it('throws an error if output was configured for invalid level', () => {
-            const expectedError = new Error('Invalid outputs: Outputs can only be configured for existing log levels');
-
-            expect(() => loadConfiguration({ formatter, outputs: { foobar: 'stdout' } as Config['outputs'] }))
-                .toThrow(expectedError);
-        });
-
-        it('throws an error if output is anything but stdout or stderr', () => {
-            const expectedError = new Error('Invalid outputs: Output must be stdout or stderr');
-
-            expect(() => loadConfiguration({ formatter, outputs: { error: 'stdin' as Output } }))
-                .toThrow(expectedError);
+            expect(message).toContain('→ at channel');
+            expect(message).toContain('→ at maxLevel');
         });
     });
 
@@ -227,7 +228,7 @@ describe('loadConfiguration', () => {
             vi.spyOn(process, 'cwd').mockReturnValue(join(root, 'with-plugins'));
         });
 
-        it('instantiates plugins with the merged configuration', () => {
+        it('instantiates plugins with the validated configuration', () => {
             const config = loadConfiguration({
                 formatter,
                 plugins: ['test-plugin'],
@@ -236,11 +237,42 @@ describe('loadConfiguration', () => {
             expect(config.plugins).toHaveLength(1);
             expect(config.plugins[0].constructor.name).toBe('TestPlugin');
             expect(config.plugins[0]).toHaveProperty('config.channel', 'testpackage');
+            expect(config.plugins[0]).toHaveProperty('config.maxLevel', 'info');
         });
 
         it('throws an error if a plugin cannot be found', () => {
             expect(() => loadConfiguration({ formatter, plugins: ['unknown-plugin'] }))
                 .toThrow(/^Plugin unknown-plugin not found in .*node_modules: /);
+        });
+
+        it('validates the options of plugins and applies their defaults', () => {
+            const config = loadConfiguration(invalid({
+                formatter,
+                plugins: ['schema-plugin'],
+                schemaPlugin: { size: 'env(SIZE, 20)' },
+            }));
+            const defaults = loadConfiguration({ formatter, plugins: ['schema-plugin'] });
+
+            expect(config.plugins[0]).toHaveProperty('config.schemaPlugin', { size: 20 });
+            expect(defaults.plugins[0]).toHaveProperty('config.schemaPlugin', { size: 10 });
+        });
+
+        it('throws an error for invalid options of plugins', () => {
+            expect(() => loadConfiguration(invalid({
+                formatter,
+                plugins: ['schema-plugin'],
+                schemaPlugin: { size: 'big', color: 'red' },
+            }))).toThrow(/Unrecognized key: "color"\n {2}→ at schemaPlugin[^]*→ at schemaPlugin\.size/);
+        });
+
+        it('throws an error for options of plugins that are not loaded', () => {
+            expect(() => loadConfiguration(invalid({ formatter, plugins: ['test-plugin'], schemaPlugin: {} })))
+                .toThrow('✖ Unrecognized key: "schemaPlugin"');
+        });
+
+        it('throws an error if a plugin redefines an option', () => {
+            expect(() => loadConfiguration({ formatter, plugins: ['conflicting-plugin'] }))
+                .toThrow('Plugin conflicting-plugin must not redefine the option "channel" of node-logger');
         });
     });
 

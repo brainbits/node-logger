@@ -82,6 +82,20 @@ You can set your own `ENV_VARS` in your package.json with `env(<env>, <fallback[
 
 This will take the value of LOGGER_LEVEL or "info" as fallback. The fallback is optional. If there is no suitable value the default is set.
 
+### Validation
+
+The configuration is validated when the first `Logger` is created. Missing or invalid values and unknown options
+throw an error that lists all problems at once:
+
+```
+Error: Invalid node-logger configuration:
+✖ Unrecognized key: "maxlevel"
+✖ Invalid option: expected one of "emergency"|"alert"|"critical"|"error"|"warning"|"notice"|"info"|"debug"
+  → at sentry.exceptionLevel
+```
+
+Values set with `env()` are validated as well, after the environment variables have been resolved.
+
 ## Usage
 ### Create a Logger instance
 ```javascript
@@ -175,3 +189,36 @@ logger.info('This is my message', { foo: 'bar' });
 ```
 
 Caution: If message is an object and meta has the same property, meta will override this property.
+
+## Writing plugins
+
+A plugin is a class exported as default export. It gets the validated configuration in its constructor and every log
+event in `log()`. A static `configSchema` adds the plugin's options to the configuration, so the logger validates them
+together with its own options:
+
+```typescript
+import type { LogEvent, Plugin, ValidatedConfig } from '@brainbits/node-logger';
+import { z } from 'zod';
+
+const myPluginSchema = z.strictObject({
+    enabled: z.boolean().default(true),
+});
+
+declare module '@brainbits/node-logger' {
+    interface Config {
+        myPlugin?: z.input<typeof myPluginSchema>;
+    }
+}
+
+export default class MyPlugin implements Plugin {
+    static readonly configSchema = z.object({ myPlugin: myPluginSchema.prefault({}) });
+
+    constructor(config: ValidatedConfig) {
+        // ...
+    }
+
+    log(event: LogEvent): void {
+        // ...
+    }
+}
+```

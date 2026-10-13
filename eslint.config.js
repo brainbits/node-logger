@@ -22,6 +22,12 @@ export default defineConfig([
         quoteProps: 'as-needed',
     }),
     {
+        settings: {
+            'import-x/resolver': {
+                // Resolve workspace packages to their sources, so no build is needed for linting
+                typescript: { conditionNames: ['@brainbits/source', 'types', 'import', 'node', 'default'] },
+            },
+        },
         languageOptions: {
             parserOptions: {
                 projectService: {

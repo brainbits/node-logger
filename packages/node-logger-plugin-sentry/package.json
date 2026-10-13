@@ -31,7 +31,8 @@
     "author": "Brainbits <moriarty@brainbits.net>",
     "license": "MIT",
     "dependencies": {
-        "@sentry/node": "^11.7.0"
+        "@sentry/node": "^11.7.0",
+        "zod": "^4.6.7"
     },
     "peerDependencies": {
         "@brainbits/node-logger": "^2.2.3"

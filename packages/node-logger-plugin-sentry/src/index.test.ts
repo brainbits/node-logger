@@ -1,7 +1,7 @@
-import type { MergedConfig } from '@brainbits/node-logger';
+import type { PluginConstructor, ValidatedConfig } from '@brainbits/node-logger';
 import * as Sentry from '@sentry/node';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import PluginSentry from './index.js';
+import PluginSentry, { sentryConfigSchema } from './index.js';
 
 vi.mock('@sentry/node', () => ({
     init: vi.fn(),
@@ -13,7 +13,7 @@ vi.mock('@sentry/node', () => ({
 
 describe('PluginSentry', () => {
     let scope: Record<'setLevel' | 'setUser' | 'setExtra' | 'setTag', ReturnType<typeof vi.fn>>;
-    let config: MergedConfig & { sentry: { tags: Record<string, string> } };
+    let config: ValidatedConfig & { sentry: { tags: Record<string, string> } };
 
     beforeEach(() => {
         config = {
@@ -54,6 +54,59 @@ describe('PluginSentry', () => {
         const integrations = vi.mocked(Sentry.init).mock.calls[0][0]?.integrations as Integrations;
 
         expect(integrations([{ name: 'Console' }, { name: 'Http' }])).toEqual([{ name: 'Http' }]);
+    });
+
+    it('should provide its config schema to the logger', () => {
+        const pluginClass: PluginConstructor = PluginSentry;
+
+        expect(pluginClass.configSchema?.parse({})).toEqual({
+            sentry: sentryConfigSchema.parse({}),
+        });
+    });
+
+    it('should apply the defaults', () => {
+        expect(sentryConfigSchema.parse({})).toEqual({
+            debug: false,
+            dsn: '',
+            environment: 'dev',
+            release: null,
+            maxBreadcrumbs: 50,
+            exceptionLevel: 'error',
+            breadcrumbLevelMap: {
+                emergency: 'error',
+                alert: 'error',
+                critical: 'error',
+                error: 'error',
+                warning: 'warning',
+                notice: 'info',
+                info: 'info',
+                debug: 'debug',
+            },
+            tags: {},
+        });
+    });
+
+    it('should accept strings from env() for booleans and numbers', () => {
+        expect(sentryConfigSchema.parse({ debug: 'false', maxBreadcrumbs: '20' }))
+            .toMatchObject({ debug: false, maxBreadcrumbs: 20 });
+    });
+
+    it.each([
+        ['an unknown option', { dns: 'https://example.com' }],
+        ['an unknown exceptionLevel', { exceptionLevel: 'fatal' }],
+        ['an invalid boolean', { debug: 'maybe' }],
+        ['an invalid number', { maxBreadcrumbs: 'many' }],
+        ['an unknown breadcrumb level', { breadcrumbLevelMap: { info: 'notice' } }],
+    ])('should reject %s', (_, sentry) => {
+        expect(sentryConfigSchema.safeParse(sentry).success).toBe(false);
+    });
+
+    it('should throw an error if the exceptionLevel is not one of the configured levels', () => {
+        config.sentry = { ...config.sentry, exceptionLevel: 'critical' };
+
+        expect(() => new PluginSentry(config)).toThrow(
+            'Invalid node-logger configuration: sentry.exceptionLevel "critical" is not one of the configured levels',
+        );
     });
 
     it('should not initialize Sentry twice', () => {
