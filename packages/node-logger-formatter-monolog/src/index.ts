@@ -8,9 +8,9 @@ interface LogData {
 }
 
 interface ParsableObject {
-    message?: unknown;
+    message?: string;
     context?: Record<string, unknown>;
-    name?: unknown;
+    name?: string;
     stack?: string | string[];
     [key: string]: unknown;
 }
@@ -88,7 +88,7 @@ function parseObject({
     }
 
     return {
-        message: name ? `${String(name)} - ${String(message || '-')}` : message,
+        message: name ? `${name} - ${message || '-'}` : message,
         context: contextObject,
         extras,
     };
@@ -109,10 +109,10 @@ function formatMonologMessage(channel: string, level: string, logData: LogData, 
         ...meta,
     });
     const extras = stringifyExtras(logData.extras);
-    const message = String(logData.message || '-');
+    const message: unknown = logData.message || '-';
 
     // Monolog formatString: "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n"
-    return `[${timestamp(formatString)}] ${channel}.${level.toUpperCase()}: ${message} ${context} ${extras}`;
+    return `[${timestamp(formatString)}] ${channel}.${level.toUpperCase()}: ${String(message)} ${context} ${extras}`;
 }
 
 /**

@@ -41,9 +41,8 @@ describe('PluginSentry', () => {
             setTag: vi.fn(),
         };
 
-        vi.mocked(Sentry.withScope).mockImplementation(
-            ((callback: (scope: Sentry.Scope) => unknown) => callback(scope as unknown as Sentry.Scope)) as typeof Sentry.withScope,
-        );
+        const withScope = (callback: (scope: Sentry.Scope) => unknown) => callback(scope as unknown as Sentry.Scope);
+        vi.mocked(Sentry.withScope).mockImplementation(withScope as typeof Sentry.withScope);
     });
 
     it('should initialize Sentry without the console integration', () => {

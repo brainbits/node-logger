@@ -94,7 +94,7 @@ function loadFormatter(config: MergedConfig, { path, require }: PackageConfigDef
     try {
         return loadModule<Formatter>(formatter!, require);
     } catch (error) {
-        throw new Error(`Formatter ${formatter} not found in ${path}: ${(error as Error).message}`);
+        throw new Error(`Formatter ${formatter} not found in ${path}: ${(error as Error).message}`, { cause: error });
     }
 }
 
@@ -102,7 +102,7 @@ function loadPlugin(pluginName: string, { path, require }: PackageConfigDefiniti
     try {
         return loadModule<PluginConstructor>(pluginName, require);
     } catch (error) {
-        throw new Error(`Plugin ${pluginName} not found in ${path}: ${(error as Error).message}`);
+        throw new Error(`Plugin ${pluginName} not found in ${path}: ${(error as Error).message}`, { cause: error });
     }
 }
 
@@ -180,9 +180,9 @@ export default function loadConfiguration(config: Config = {}): ResolvedConfig {
         packageJsonConfigDefinition.config,
         config,
     ], {
-        arrayMerge: (target, source) => source,
+        arrayMerge: (target: unknown[], source: unknown[]) => source,
         customMerge: (key) => {
-            if (key === 'outputs') return (a, b) => b; // Override outputs instead of merging them
+            if (key === 'outputs') return (a: unknown, b: unknown) => b; // Override outputs instead of merging them
             return undefined;
         },
     }));
