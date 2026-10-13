@@ -2,51 +2,22 @@
     "name": "@brainbits/node-logger",
     "version": "2.5.1",
     "description": "Logger for node projects",
-    "main": "dist/index.js",
-    "types": "src/types.d.ts",
-    "scripts": {
-        "build": "babel ./src --out-dir ./dist --ignore test.js,setupTests.js,__mocks__/*",
-        "build:watch": "npm run build -- --watch --source-maps",
-        "check:code-style": "eslint ./src",
-        "test:coverage": "npm test -- --coverage",
-        "test": "jest",
-        "test:watch": "npm test -- --watch"
-    },
-    "babel": {
-        "presets": [
-            [
-                "@babel/preset-env",
-                {
-                    "targets": {
-                        "node": "current"
-                    }
-                }
-            ]
-        ],
-        "plugins": [
-            "@babel/plugin-proposal-export-default-from"
-        ]
-    },
-    "eslintConfig": {
-        "parser": "@babel/eslint-parser",
-        "extends": [
-            "brainbits",
-            "brainbits-jest"
-        ],
-        "env": {
-            "node": true,
-            "jest": true
+    "type": "module",
+    "exports": {
+        ".": {
+            "@brainbits/source": "./src/index.ts",
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
         }
     },
-    "jest": {
-        "collectCoverage": true,
-        "collectCoverageFrom": [
-            "src/**/*.js"
-        ],
-        "coverageDirectory": "coverage",
-        "roots": [
-            "<rootDir>/src/"
-        ]
+    "files": [
+        "dist"
+    ],
+    "engines": {
+        "node": ">=22.12.0"
+    },
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json"
     },
     "repository": {
         "type": "git",
@@ -61,16 +32,6 @@
     "license": "MIT",
     "dependencies": {
         "deepmerge": "^4.3.1"
-    },
-    "devDependencies": {
-        "@babel/cli": "^7.29.7",
-        "@babel/eslint-parser": "^7.29.9",
-        "@babel/plugin-proposal-export-default-from": "^7.29.7",
-        "@babel/preset-env": "^7.29.7",
-        "eslint": "^8.57.1",
-        "eslint-config-brainbits": "^4.1.13",
-        "eslint-config-brainbits-jest": "^4.1.13",
-        "jest": "^30.5.2"
     },
     "publishConfig": {
         "access": "public"

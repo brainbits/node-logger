@@ -1,4 +1,8 @@
 # Logger
+## Requirements
+
+Node.js 22.12 or newer. The packages are ES modules and ship their own TypeScript types.
+
 ## Installation
 `yarn add @brainbits/node-logger @brainbits/node-logger-formatter-monolog`
 
@@ -13,7 +17,7 @@ You have to add a formatter to your `package.json`. E. g. the monolog formatter:
 
 ```json
 "nodeLogger": {
-    "formatter": "@brainbits/node-node-logger-node-logger-formatter-monolog"
+    "formatter": "@brainbits/node-logger-formatter-monolog"
 }
 ```
 
@@ -58,7 +62,7 @@ You can add more parameters to your `"nodeLogger": {}` section.
 ```json
 "nodeLogger": {
     "plugins": [
-        "@brainbits/node-node-logger-plugin-<name>"
+        "@brainbits/node-logger-plugin-<name>"
     ]
 }
 ```
@@ -111,7 +115,7 @@ Second argument is the entire configration object. You can override the configur
 
 ### Default logger
 ```javascript
-import Logger from '@brainbits/node-logger';
+import { Logger } from '@brainbits/node-logger';
 
 const logger = new Logger();
 
@@ -125,8 +129,9 @@ logger.info('This is my message', meta);
 ### Timer feature
 There is a timer function `logger.start(<message>)`
 ```javascript
-import { logger } from '@brainbits/node-logger';
+import { Logger } from '@brainbits/node-logger';
 
+const logger = new Logger();
 const meta = {
     foo: 'bar';
 };

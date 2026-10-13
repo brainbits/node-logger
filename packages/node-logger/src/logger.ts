@@ -1,19 +1,32 @@
-import loadConfiguration from './config';
+import loadConfiguration from './config.js';
+import type { Config, LogEvent, LogLevel, LogMethod, Meta, ResolvedConfig } from './types.js';
 
 /**
  * @description Logger class
  * @class Logger
  */
 export default class Logger {
+    // Created in the constructor for every configured level
+    declare emergency: LogMethod;
+    declare alert: LogMethod;
+    declare critical: LogMethod;
+    declare error: LogMethod;
+    declare warning: LogMethod;
+    declare notice: LogMethod;
+    declare info: LogMethod;
+    declare debug: LogMethod;
+
+    private readonly config: ResolvedConfig;
+
     /**
      * @description Map for the timer
      */
-    timeMap = new Map();
+    private readonly timeMap = new Map<unknown, [number, number]>();
 
     /**
      * @description Creates an instance of Logger.
      */
-    constructor(config = {}) {
+    constructor(config: Config = {}) {
         this.config = loadConfiguration(config);
         const { levels, channel } = this.config;
 
@@ -35,21 +48,19 @@ export default class Logger {
 
     /**
      * @description Start the timer with a message as identifier
-     * @param {*} message
      */
-    start(message) {
+    start(message: unknown): void {
         this.timeMap.set(message, process.hrtime());
     }
 
     /**
      * @description Stops the timer with an existing message
-     * @param {*} message
-     * @param {*} meta
      */
-    stop(message, meta = {}) {
+    stop(message: unknown, meta: Meta = {}): void {
         let timeMs = null;
-        if (this.timeMap.has(message)) {
-            const [s, ns] = process.hrtime(this.timeMap.get(message));
+        const startTime = this.timeMap.get(message);
+        if (startTime) {
+            const [s, ns] = process.hrtime(startTime);
             timeMs = Math.round(((s * 1e9) + ns) * 1e-6);
         }
         this[this.config.timerLevel](message, { ...meta, timeMs });
@@ -57,17 +68,9 @@ export default class Logger {
 
     /**
      * @description logs the plugins with the feed object
-     * @memberof Logger
-     * @private
      */
-    logToPlugins(event) {
-        const { plugins } = this.config;
-
-        if (!plugins && !Array.isArray(plugins)) {
-            return;
-        }
-
-        plugins.forEach((plugin) => {
+    private logToPlugins(event: LogEvent): void {
+        this.config.plugins.forEach((plugin) => {
             if ('log' in plugin) {
                 plugin.log(event);
             }
@@ -76,18 +79,15 @@ export default class Logger {
 
     /**
      * @description Returns the output for a corresponding level
-     * @param {string} level
-     * @returns {Stream|null} output
-     * @memberof Logger
-     * @private
      */
-    getOutputForLevel(level) {
-        const outputLevel = this.config.levels
-            .slice(0, this.config.levels.indexOf(level) + 1)
+    private getOutputForLevel(level: LogLevel): NodeJS.WriteStream | null {
+        const { levels, outputs } = this.config;
+        const outputLevel = levels
+            .slice(0, levels.indexOf(level) + 1)
             .reverse()
-            .find(levelName => levelName in this.config.outputs);
+            .find(levelName => levelName in outputs);
 
-        const output = this.config.outputs[outputLevel];
+        const output = outputLevel && outputs[outputLevel];
 
         if (!output) {
             return null;
@@ -102,12 +102,8 @@ export default class Logger {
 
     /**
      * @description Checks if the level is allowed to write to our targets
-     * @param {*} level
-     * @returns {boolean}
-     * @memberof Logger
-     * @private
      */
-    isLevelSilent(level) {
+    private isLevelSilent(level: LogLevel): boolean {
         const { levels, maxLevel } = this.config;
 
         return levels.indexOf(level) > levels.indexOf(maxLevel);
@@ -115,11 +111,8 @@ export default class Logger {
 
     /**
      * @description Writes the content of an event to the output
-     * @param {object} event
-     * @memberof Logger
-     * @private
      */
-    write(event) {
+    private write(event: LogEvent): void {
         if (this.isLevelSilent(event.level)) {
             return;
         }
@@ -127,7 +120,7 @@ export default class Logger {
         const message = this.config.formatter(event);
         const target = this.getOutputForLevel(event.level);
 
-        if (target && target.writable) {
+        if (target?.writable) {
             target.write(`${message}\n`);
         }
     }

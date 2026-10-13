@@ -1,19 +1,21 @@
-import monolog from './index';
+import type { LogLevel, Meta } from '@brainbits/node-logger';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import monolog from './index.js';
 
-function createEvent(channel, level, message, meta) {
+function createEvent(channel: string, level: string, message: unknown, meta?: Meta) {
     return {
         channel,
-        level,
+        level: level as LogLevel,
         message,
         meta,
     };
 }
 
 describe('monolog function', () => {
-    let error;
+    let error: Error & { locations?: unknown };
     beforeEach(() => {
-        jest.useFakeTimers('modern');
-        jest.setSystemTime(new Date('2010-01-31T23:59:59'));
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2010-01-31T23:59:59'));
 
         error = new Error('This is a fake error');
         error.stack = `Error - This is a fake error
@@ -23,7 +25,7 @@ describe('monolog function', () => {
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     it('should get the correct channel name', () => {

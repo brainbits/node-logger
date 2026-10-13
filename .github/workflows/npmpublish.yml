@@ -20,10 +20,10 @@ jobs:
                   node-version: 24
             - name: Install node dependencies
               run: npm ci
-            - name: Run code-style
-              run: npm run check:code-style -ws
+            - name: Run type check
+              run: npm run typecheck
             - name: Run tests
-              run: npm test -ws
+              run: npm test
 
     release:
         name: Create release and publish
@@ -41,7 +41,7 @@ jobs:
             - name: Install node dependencies
               run: npm ci
             - name: Build
-              run: npm run build -ws
+              run: npm run build
             - name: Check that the tag matches the package version
               run: test "${{ github.ref_name }}" = "v$(node -p "require('./package.json').version")"
             - name: Publish packages

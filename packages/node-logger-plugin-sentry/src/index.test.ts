@@ -1,15 +1,26 @@
+import type { MergedConfig } from '@brainbits/node-logger';
 import * as Sentry from '@sentry/node';
-import PluginSentry from './index';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import PluginSentry from './index.js';
 
-jest.mock('@sentry/node');
+vi.mock('@sentry/node', () => ({
+    init: vi.fn(),
+    isInitialized: vi.fn(() => false),
+    withScope: vi.fn(),
+    addBreadcrumb: vi.fn(),
+    captureException: vi.fn(),
+}));
 
 describe('PluginSentry', () => {
-    let scope;
-    let config;
+    let scope: Record<'setLevel' | 'setUser' | 'setExtra' | 'setTag', ReturnType<typeof vi.fn>>;
+    let config: MergedConfig & { sentry: { tags: Record<string, string> } };
 
     beforeEach(() => {
         config = {
+            channel: 'test',
             maxLevel: 'error',
+            timerLevel: 'debug',
+            outputs: {},
             levels: [
                 'error',
                 'info',
@@ -20,19 +31,38 @@ describe('PluginSentry', () => {
                 tags: {},
             },
             plugins: [],
-            blah: 'foo',
-            formatter: () => {},
+            formatter: () => '',
         };
 
         scope = {
-            setLevel: jest.fn(),
-            setUser: jest.fn(),
-            setExtra: jest.fn(),
-            setTag: jest.fn(),
-            addBreadcrumb: jest.fn(),
+            setLevel: vi.fn(),
+            setUser: vi.fn(),
+            setExtra: vi.fn(),
+            setTag: vi.fn(),
         };
 
-        Sentry.withScope.mockImplementation(fn => fn(scope));
+        vi.mocked(Sentry.withScope).mockImplementation(
+            ((callback: (scope: Sentry.Scope) => unknown) => callback(scope as unknown as Sentry.Scope)) as typeof Sentry.withScope,
+        );
+    });
+
+    it('should initialize Sentry without the console integration', () => {
+        new PluginSentry(config);
+
+        expect(Sentry.init).toHaveBeenCalledWith(expect.objectContaining({ maxBreadcrumbs: 3, release: null }));
+
+        type Integrations = (integrations: { name: string }[]) => { name: string }[];
+        const integrations = vi.mocked(Sentry.init).mock.calls[0][0]?.integrations as Integrations;
+
+        expect(integrations([{ name: 'Console' }, { name: 'Http' }])).toEqual([{ name: 'Http' }]);
+    });
+
+    it('should not initialize Sentry twice', () => {
+        vi.mocked(Sentry.isInitialized).mockReturnValueOnce(true);
+
+        new PluginSentry(config);
+
+        expect(Sentry.init).not.toHaveBeenCalled();
     });
 
     it('should call Sentry.captureException', () => {
@@ -40,6 +70,7 @@ describe('PluginSentry', () => {
         const error = new Error('error message');
 
         plugin.log({
+            channel: 'test',
             message: error,
             level: 'error',
         });
@@ -51,6 +82,7 @@ describe('PluginSentry', () => {
         const plugin = new PluginSentry(config);
 
         plugin.log({
+            channel: 'test',
             message: new Error('error message'),
             level: 'error',
         });
@@ -64,11 +96,12 @@ describe('PluginSentry', () => {
         const plugin = new PluginSentry(config);
 
         plugin.log({
+            channel: 'test',
             message: new Error('error message'),
             level: 'error',
         });
 
-        expect(scope.setUser).toHaveBeenCalledWith({ id: config.context.user });
+        expect(scope.setUser).toHaveBeenCalledWith({ id: 'foobar' });
     });
 
     it('should set correct user if object with id given', () => {
@@ -77,11 +110,12 @@ describe('PluginSentry', () => {
         const plugin = new PluginSentry(config);
 
         plugin.log({
+            channel: 'test',
             message: new Error('error message'),
             level: 'error',
         });
 
-        expect(scope.setUser).toHaveBeenCalledWith(config.context.user);
+        expect(scope.setUser).toHaveBeenCalledWith(config.context?.user);
     });
 
     it('should set correct user if object with username given', () => {
@@ -90,11 +124,12 @@ describe('PluginSentry', () => {
         const plugin = new PluginSentry(config);
 
         plugin.log({
+            channel: 'test',
             message: new Error('error message'),
             level: 'error',
         });
 
-        expect(scope.setUser).toHaveBeenCalledWith(config.context.user);
+        expect(scope.setUser).toHaveBeenCalledWith(config.context?.user);
     });
 
     it('should set correct user if object with email given', () => {
@@ -103,11 +138,12 @@ describe('PluginSentry', () => {
         const plugin = new PluginSentry(config);
 
         plugin.log({
+            channel: 'test',
             message: new Error('error message'),
             level: 'error',
         });
 
-        expect(scope.setUser).toHaveBeenCalledWith(config.context.user);
+        expect(scope.setUser).toHaveBeenCalledWith(config.context?.user);
     });
 
     it('should set correct user if object with ip_address given', () => {
@@ -116,17 +152,19 @@ describe('PluginSentry', () => {
         const plugin = new PluginSentry(config);
 
         plugin.log({
+            channel: 'test',
             message: new Error('error message'),
             level: 'error',
         });
 
-        expect(scope.setUser).toHaveBeenCalledWith(config.context.user);
+        expect(scope.setUser).toHaveBeenCalledWith(config.context?.user);
     });
 
     it('should set correct tags', () => {
         const plugin = new PluginSentry(config);
 
         plugin.log({
+            channel: 'test',
             message: new Error('error message'),
             level: 'error',
             meta: { tags: { foo: 'bar' } },
@@ -141,6 +179,7 @@ describe('PluginSentry', () => {
         const plugin = new PluginSentry(config);
 
         plugin.log({
+            channel: 'test',
             message: new Error('error message'),
             level: 'error',
             meta: { tags: { foo: 'bar' } },
@@ -156,6 +195,7 @@ describe('PluginSentry', () => {
         const plugin = new PluginSentry(config);
 
         plugin.log({
+            channel: 'test',
             message: new Error('error message'),
             level: 'error',
         });
@@ -168,6 +208,7 @@ describe('PluginSentry', () => {
         const plugin = new PluginSentry(config);
 
         plugin.log({
+            channel: 'test',
             message: 'some message',
             level: 'info',
             meta: { foo: 'bar' },
@@ -176,6 +217,7 @@ describe('PluginSentry', () => {
         expect(Sentry.addBreadcrumb).not.toHaveBeenCalled();
 
         plugin.log({
+            channel: 'test',
             message: new Error(),
             level: 'error',
         });

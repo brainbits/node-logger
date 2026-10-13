@@ -1,39 +1,37 @@
-import loadConfiguration from './config';
-import Logger from './logger';
+import { describe, expect, it, vi } from 'vitest';
+import loadConfiguration from './config.js';
+import Logger from './logger.js';
+import type { ResolvedConfig } from './types.js';
 
-jest.mock('./config', () => jest.fn(() => ({
-    channel: 'test',
-    maxLevel: 'debug',
-    levels: [
-        'error',
-        'info',
-        'debug',
-    ],
-    formatter(event) {
-        return JSON.stringify(event);
-    },
-    plugins: [],
-    outputs: {
-        error: 'stderr',
-        info: 'stdout',
-    },
-})));
+vi.mock('./config.js', () => ({
+    default: vi.fn((): ResolvedConfig => ({
+        channel: 'test',
+        maxLevel: 'debug',
+        timerLevel: 'debug',
+        levels: [
+            'error',
+            'info',
+            'debug',
+        ],
+        formatter(event) {
+            return JSON.stringify(event);
+        },
+        plugins: [],
+        outputs: {
+            error: 'stderr',
+            info: 'stdout',
+        },
+    })),
+}));
 
 const defaultConfig = loadConfiguration();
 
 describe('Logger', () => {
-    const stdout = jest.spyOn(process.stdout, 'write').mockImplementation(() => null);
-    const stderr = jest.spyOn(process.stderr, 'write').mockImplementation(() => null);
     const levels = ['error', 'info', 'debug'];
     const methods = [
         'start',
         'stop',
     ];
-
-    beforeEach(() => {
-        stdout.mockClear();
-        stderr.mockClear();
-    });
 
     it.each(levels)('should have generate level `%s` as public method', (level) => {
         const logger = new Logger();
@@ -46,6 +44,7 @@ describe('Logger', () => {
     });
 
     it('should pass the correct objects to the output', () => {
+        const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
         const givenMessage = 'message';
         const givenMeta = { meta: 'values' };
         const expectedEvent = {
@@ -61,8 +60,21 @@ describe('Logger', () => {
         expect(stdout).toHaveBeenCalledWith(`${JSON.stringify(expectedEvent)}\n`);
     });
 
+    it('should log the elapsed time with the timer level', () => {
+        const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+        const logger = new Logger();
+
+        logger.start('timer');
+        logger.stop('timer', { foo: 'bar' });
+
+        expect(stdout).toHaveBeenCalledWith(expect.stringMatching(
+            /^\{"channel":"test","level":"debug","message":"timer","meta":\{"foo":"bar","timeMs":\d+\}\}\n$/,
+        ));
+    });
+
     it('should pass event to all plugins', () => {
-        const givenPlugin = { log: jest.fn() };
+        vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+        const givenPlugin = { log: vi.fn() };
         const givenMessage = 'message';
         const givenMeta = { meta: 'values' };
         const expectedEvent = {
@@ -72,7 +84,7 @@ describe('Logger', () => {
             meta: givenMeta,
         };
 
-        loadConfiguration.mockReturnValue({ ...defaultConfig, plugins: [givenPlugin] });
+        vi.mocked(loadConfiguration).mockReturnValue({ ...defaultConfig, plugins: [givenPlugin] });
         const logger = new Logger();
 
         logger.info(givenMessage, givenMeta);

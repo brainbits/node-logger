@@ -1,8 +1,29 @@
-/* eslint-disable class-methods-use-this */
+import type { LogEvent, LogLevel, MergedConfig, Plugin } from '@brainbits/node-logger';
 import * as Sentry from '@sentry/node';
 
-export default class PluginSentry {
-    defaults = {
+type BreadcrumbLevel = 'error' | 'warning' | 'info' | 'debug';
+
+export interface SentryConfig {
+    debug: boolean;
+    dsn: string;
+    environment: string;
+    release: string | null;
+    maxBreadcrumbs: number;
+    exceptionLevel: LogLevel;
+    breadcrumbLevelMap: Partial<Record<LogLevel, BreadcrumbLevel>>;
+    tags: Record<string, string>;
+}
+
+declare module '@brainbits/node-logger' {
+    interface Config {
+        sentry?: Partial<SentryConfig>;
+    }
+}
+
+type PluginSentryConfig = Omit<MergedConfig, 'sentry'> & { sentry: SentryConfig };
+
+export default class PluginSentry implements Plugin {
+    defaults: SentryConfig = {
         debug: false,
         dsn: '',
         environment: 'dev',
@@ -22,9 +43,11 @@ export default class PluginSentry {
         tags: {},
     };
 
-    breadCrumbs = [];
+    private readonly config: PluginSentryConfig;
 
-    constructor(config = {}) {
+    private readonly breadCrumbs: LogEvent[] = [];
+
+    constructor(config: MergedConfig) {
         const { sentry, ...rest } = config;
 
         this.config = {
@@ -40,7 +63,8 @@ export default class PluginSentry {
                 debug: this.config.sentry.debug,
                 dsn: this.config.sentry.dsn,
                 environment: this.config.sentry.environment,
-                release: this.config.sentry.release,
+                // null instead of undefined keeps Sentry from detecting a release on its own
+                release: this.config.sentry.release as string | undefined,
                 maxBreadcrumbs: this.config.sentry.maxBreadcrumbs,
                 integrations(integrations) {
                     return integrations
@@ -50,7 +74,7 @@ export default class PluginSentry {
         }
     }
 
-    log(event) {
+    log(event: LogEvent): void {
         if (this.isException(event)) {
             this.logException(event);
             return;
@@ -59,13 +83,13 @@ export default class PluginSentry {
         this.addBreadcrumb(event);
     }
 
-    isException({ level }) {
+    private isException({ level }: LogEvent): boolean {
         const { levels, sentry } = this.config;
 
         return levels.indexOf(sentry.exceptionLevel) >= levels.indexOf(level);
     }
 
-    logException({ level, message, meta = {} }) {
+    private logException({ level, message, meta = {} }: LogEvent): void {
         const { sentry, context = {} } = this.config;
 
         Sentry.withScope((scope) => {
@@ -89,25 +113,25 @@ export default class PluginSentry {
                 scope.setTag(key, value);
             });
 
-            Object.entries(tags).forEach(([key, value]) => {
+            Object.entries(tags as Record<string, string>).forEach(([key, value]) => {
                 scope.setTag(key, value);
             });
 
             this.breadCrumbs.forEach((breadCrumb) => {
                 Sentry.addBreadcrumb({
                     category: breadCrumb.level,
-                    message: breadCrumb.message,
+                    message: breadCrumb.message as string,
                     level: sentry.breadcrumbLevelMap[breadCrumb.level],
                     data: breadCrumb.meta,
                 });
             });
 
-            scope.setLevel(level);
+            scope.setLevel(level as Sentry.SeverityLevel);
             Sentry.captureException(message);
         });
     }
 
-    addBreadcrumb(event) {
+    private addBreadcrumb(event: LogEvent): void {
         const { sentry } = this.config;
 
         if (!Object.keys(sentry.breadcrumbLevelMap).includes(event.level)) {
@@ -121,33 +145,21 @@ export default class PluginSentry {
         }
     }
 
-    intersect(aParam, bParam) {
-        let a = aParam;
-        let b = bParam;
-
-        if (b.length > a.length) {
-            [b, a] = [a, b];
-        }
-
-        return a.filter(e => b.includes(e));
-    }
-
-    ensureUser(user) {
+    private ensureUser(user: unknown): Sentry.User | null {
         if (!user) {
             return null;
         }
 
         if (typeof user !== 'object') {
-            return { id: user };
+            return { id: user as string | number };
         }
 
         const keys = ['id', 'username', 'email', 'ip_address'];
-        const keyIntersect = this.intersect(keys, Object.keys(user));
 
-        if (keyIntersect.length === 0) {
+        if (!Object.keys(user).some(key => keys.includes(key))) {
             return { ...user, id: 'unknown' };
         }
 
-        return user;
+        return user as Sentry.User;
     }
 }

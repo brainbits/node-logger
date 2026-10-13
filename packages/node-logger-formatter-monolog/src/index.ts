@@ -1,23 +1,44 @@
-import { getType } from 'jest-get-type';
+import type { LogEvent, Meta } from '@brainbits/node-logger';
 import { format } from 'date-fns';
+
+interface LogData {
+    message: unknown;
+    context?: Record<string, unknown>;
+    extras?: Record<string, unknown>;
+}
+
+interface ParsableObject {
+    message?: unknown;
+    context?: Record<string, unknown>;
+    name?: unknown;
+    stack?: string | string[];
+    [key: string]: unknown;
+}
+
+/**
+ * @description Checks if the value is an object (e. g. an error), but no array, regexp, map, set or date
+ */
+function isParsableObject(value: unknown): value is ParsableObject {
+    return typeof value === 'object'
+        && value !== null
+        && !Array.isArray(value)
+        && ![RegExp, Map, Set, Date].some(type => value.constructor === type);
+}
 
 /**
  * @description Get current timestamp
- * @param {any} [timestampFormat=TIMESTAMP_FORMAT]
  * @returns {string} Current timestamp in given format
  */
-function timestamp(timestampFormat) {
+function timestamp(timestampFormat: string): string {
     return format(new Date(), timestampFormat);
 }
 
 /**
  * @description Checks if the object is non empty or has undefined properties
- * @export
- * @param {any} object
  * @returns {boolean} Returns true if the object is not empty
  */
-function isNonEmptyObject(object) {
-    return typeof object === 'object' && Object
+function isNonEmptyObject(object: unknown): boolean {
+    return typeof object === 'object' && object !== null && Object
         .values(object)
         .filter(entry => entry !== undefined)
         .length > 0;
@@ -25,16 +46,14 @@ function isNonEmptyObject(object) {
 
 /**
  * @description Make a string of an non empty object or return ‘[]' as a string
- * @param {object} object
  * @returns {string} The result as a string
  */
-function stringifyExtras(object) {
+function stringifyExtras(object: unknown): string {
     return isNonEmptyObject(object) ? JSON.stringify(object) : '[]';
 }
 
 /**
  * @description parse message of an error or object
- * @param {object} object Object to parse
  * @returns {object} An object with message, context and extras
  */
 function parseObject({
@@ -43,7 +62,7 @@ function parseObject({
     name,
     stack = [],
     ...extras
-}) {
+}: ParsableObject): LogData {
     let stackTrace = stack;
     let contextObject = context;
 
@@ -69,7 +88,7 @@ function parseObject({
     }
 
     return {
-        message: name ? `${name} - ${message || '-'}` : message,
+        message: name ? `${String(name)} - ${String(message || '-')}` : message,
         context: contextObject,
         extras,
     };
@@ -77,52 +96,43 @@ function parseObject({
 
 /**
  * @description Generate the monolog string
- * @param {string} channel Channel of the node-logger
- * @param {string} level Level of the node-logger
- * @param {object} logData Data from our object with message, context and extras
- * @param {object} meta Some meta information for context
+ * @param channel Channel of the node-logger
+ * @param level Level of the node-logger
+ * @param logData Data from our object with message, context and extras
+ * @param meta Some meta information for context
  * @returns {string} Monolog string
  */
-function formatMonologMessage(channel, level, logData, meta = {}) {
+function formatMonologMessage(channel: string, level: string, logData: LogData, meta: Meta = {}): string {
     const formatString = 'yyyy-MM-dd HH:mm:ss';
     const context = stringifyExtras({
         ...logData.context,
         ...meta,
     });
     const extras = stringifyExtras(logData.extras);
+    const message = String(logData.message || '-');
 
     // Monolog formatString: "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n"
-    return `[${timestamp(formatString)}] ${channel}.${level.toUpperCase()}: ${logData.message || '-'} ${context} ${extras}`;
+    return `[${timestamp(formatString)}] ${channel}.${level.toUpperCase()}: ${message} ${context} ${extras}`;
 }
 
 /**
  * @description Formatter function
- * @export
- * @param {object} event
- * @returns {function} formatter function for node-logger
+ * @returns {string} The event formatted as monolog line
  */
 export default function monolog({
     channel,
     level,
     message,
     meta,
-}) {
-    let logData = {
-        message: null,
-        context: [],
-        extra: [],
-    };
+}: LogEvent): string {
+    let logData: LogData;
 
-    switch (getType(message)) {
-        case 'object':
-            logData = parseObject(message);
-            break;
-        case 'array':
-            logData = { ...logData, message: message.join(' ') };
-            break;
-        default:
-            logData = { ...logData, message };
-            break;
+    if (isParsableObject(message)) {
+        logData = parseObject(message);
+    } else if (Array.isArray(message)) {
+        logData = { message: message.join(' ') };
+    } else {
+        logData = { message };
     }
 
     return formatMonologMessage(channel, level, logData, meta);

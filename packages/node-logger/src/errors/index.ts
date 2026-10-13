@@ -1,4 +1,3 @@
-/* eslint-disable max-classes-per-file */
 /**
  * @description Generates a custom error
  * @export
@@ -6,7 +5,10 @@
  * @extends {Error}
  */
 export class CustomError extends Error {
-    constructor(message, context, origin) {
+    context: unknown;
+    origin: unknown;
+
+    constructor(message: string, context?: unknown, origin?: unknown) {
         super();
         this.context = context;
         this.message = message;
@@ -25,7 +27,18 @@ export class CustomError extends Error {
  * @extends {CustomError}
  */
 export class HttpError extends CustomError {
-    constructor(message, context, requestUrl, statusCode, requestId, origin) {
+    statusCode?: number;
+    requestUrl?: string;
+    requestId?: string;
+
+    constructor(
+        message: string,
+        context?: unknown,
+        requestUrl?: string,
+        statusCode?: number,
+        requestId?: string,
+        origin?: unknown,
+    ) {
         super(message, context, origin);
         this.name = 'HttpError';
         this.statusCode = statusCode;
@@ -41,7 +54,10 @@ export class HttpError extends CustomError {
  * @extends {CustomError}
  */
 export class ConnectorError extends CustomError {
-    constructor(message, context, requestUrl, requestId, origin) {
+    requestUrl?: string;
+    requestId?: string;
+
+    constructor(message: string, context?: unknown, requestUrl?: string, requestId?: string, origin?: unknown) {
         super(message, context, origin);
         this.name = 'ConnectorError';
         this.requestUrl = requestUrl;

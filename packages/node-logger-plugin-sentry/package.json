@@ -2,48 +2,22 @@
     "name": "@brainbits/node-logger-plugin-sentry",
     "version": "2.5.1",
     "description": "Logger plugin sentry",
-    "main": "dist/index.js",
-    "types": "src/types.d.ts",
-    "scripts": {
-        "build:watch": "npm run build -- --watch --source-maps",
-        "build": "babel src --out-dir ./dist --ignore test.js,setupTests.js,__mocks__/*",
-        "check:code-style": "eslint ./src",
-        "test:coverage": "npm test -- --coverage",
-        "test:watch": "npm test -- --watch",
-        "test": "jest"
-    },
-    "babel": {
-        "presets": [
-            [
-                "@babel/preset-env",
-                {
-                    "targets": {
-                        "node": "current"
-                    }
-                }
-            ]
-        ]
-    },
-    "eslintConfig": {
-        "parser": "@babel/eslint-parser",
-        "extends": [
-            "brainbits",
-            "brainbits-jest"
-        ],
-        "env": {
-            "node": true,
-            "jest": true
+    "type": "module",
+    "exports": {
+        ".": {
+            "@brainbits/source": "./src/index.ts",
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
         }
     },
-    "jest": {
-        "collectCoverage": true,
-        "collectCoverageFrom": [
-            "src/**/*.js"
-        ],
-        "coverageDirectory": "coverage",
-        "roots": [
-            "<rootDir>/src/"
-        ]
+    "files": [
+        "dist"
+    ],
+    "engines": {
+        "node": ">=22.12.0"
+    },
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json"
     },
     "repository": {
         "type": "git",
@@ -58,16 +32,6 @@
     "license": "MIT",
     "dependencies": {
         "@sentry/node": "^11.7.0"
-    },
-    "devDependencies": {
-        "@babel/cli": "^7.29.7",
-        "@babel/eslint-parser": "^7.29.9",
-        "@babel/preset-env": "^7.29.7",
-        "@brainbits/node-logger": "^2.4.4",
-        "eslint": "^8.57.1",
-        "eslint-config-brainbits": "^4.1.13",
-        "eslint-config-brainbits-jest": "^4.1.13",
-        "jest": "^30.5.2"
     },
     "peerDependencies": {
         "@brainbits/node-logger": "^2.2.3"

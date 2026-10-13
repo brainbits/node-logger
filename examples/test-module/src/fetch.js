@@ -1,5 +1,4 @@
 import { Logger } from '@brainbits/node-logger';
-import fetch from 'node-fetch';
 
 const urls = [
     'https://jsonplaceholder.typicode.com/posts/1',

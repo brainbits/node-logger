@@ -1,4 +1,5 @@
-import { CustomError, ConnectorError, HttpError } from './index';
+import { describe, expect, it } from 'vitest';
+import { ConnectorError, CustomError, HttpError } from './index.js';
 
 describe('Error types:', () => {
     describe('CustomError', () => {
@@ -21,7 +22,7 @@ describe('Error types:', () => {
         });
 
         it('should have a property stack with a stack trace in it', () => {
-            expect(error.stack).toContain('describe');
+            expect(error.stack).toContain('index.test.ts');
         });
 
         it('should execute captureStackTrace() from class Error', () => {
