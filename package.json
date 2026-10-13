@@ -1,18 +1,18 @@
 {
     "name": "@brainbits/node-logger-monorepo",
+    "version": "2.5.1",
+    "private": true,
     "description": "Logger for node projects",
     "repository": {
         "type": "git",
         "url": "git@github.com:brainbits/node-logger.git"
     },
-    "private": false,
-    "devDependencies": {
-        "lerna": "^10.1.0"
-    },
     "workspaces": [
-        "./packages/*"
+        "packages/node-logger",
+        "packages/node-logger-formatter-monolog",
+        "packages/node-logger-plugin-sentry"
     ],
-    "publishConfig": {
-        "access": "public"
+    "scripts": {
+        "release": "sh scripts/release.sh"
     }
 }

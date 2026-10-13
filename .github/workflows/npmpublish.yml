@@ -42,7 +42,9 @@ jobs:
               run: npm ci
             - name: Build
               run: npm run build -ws
-            - name: Release and publish using lerna with conventional commits
+            - name: Check that the tag matches the package version
+              run: test "${{ github.ref_name }}" = "v$(node -p "require('./package.json').version")"
+            - name: Publish packages
               env:
                   NODE_AUTH_TOKEN: ${{secrets.npm_token}}
-              run: npx lerna publish from-package --yes
+              run: npm publish --workspaces
