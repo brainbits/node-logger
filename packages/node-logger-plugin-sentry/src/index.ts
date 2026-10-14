@@ -53,6 +53,31 @@ const severityLevels: Record<LogLevel, Sentry.SeverityLevel> = {
     debug: 'debug',
 };
 
+/**
+ * Messages are strings or errors. Arrays and objects are no part of the API anymore,
+ * but are still sent readable for callers without type checks.
+ */
+function toText(message: unknown): string {
+    if (typeof message === 'string') {
+        return message;
+    }
+
+    if (Array.isArray(message)) {
+        return message.join(' ');
+    }
+
+    if (typeof message === 'object' && message !== null && 'message' in message && typeof message.message === 'string') {
+        return message.message;
+    }
+
+    try {
+        return JSON.stringify(message) ?? String(message);
+    } catch {
+        // Circular structures and BigInts cannot be serialized, logging must not fail because of them
+        return String(message);
+    }
+}
+
 export default class PluginSentry implements Plugin {
     static readonly configSchema = z.object({
         sentry: sentryConfigSchema.prefault({}),
@@ -61,8 +86,6 @@ export default class PluginSentry implements Plugin {
     private readonly config: ValidatedConfig;
 
     private readonly sentry: SentryConfig;
-
-    private readonly breadCrumbs: LogEvent[] = [];
 
     constructor(config: ValidatedConfig) {
         this.config = config;
@@ -126,39 +149,39 @@ export default class PluginSentry implements Plugin {
                 scope.setTag(key, value);
             });
 
-            this.breadCrumbs.forEach((breadCrumb) => {
-                Sentry.addBreadcrumb({
-                    category: breadCrumb.level,
-                    message: String(breadCrumb.message),
-                    level: sentry.breadcrumbLevelMap[breadCrumb.level],
-                    data: breadCrumb.meta,
-                });
-            });
-
             // Sentry knows fewer levels, the original one is kept as tag
             scope.setLevel(severityLevels[level]);
             scope.setTag('logLevel', level);
 
             if (message instanceof Error) {
                 Sentry.captureException(message);
-            } else {
-                Sentry.captureMessage(message);
+                return;
             }
+
+            if (typeof message !== 'string') {
+                scope.setExtra('message', message);
+            }
+
+            Sentry.captureMessage(toText(message));
         });
     }
 
-    private addBreadcrumb(event: LogEvent): void {
-        const { sentry } = this;
+    /**
+     * Sentry keeps the last `maxBreadcrumbs` breadcrumbs and sends them with the next event
+     */
+    private addBreadcrumb({ level, message, meta }: LogEvent): void {
+        const breadcrumbLevel = this.sentry.breadcrumbLevelMap[level];
 
-        if (!Object.keys(sentry.breadcrumbLevelMap).includes(event.level)) {
+        if (!breadcrumbLevel) {
             return;
         }
 
-        this.breadCrumbs.push(event);
-
-        if (this.breadCrumbs.length > sentry.maxBreadcrumbs) {
-            this.breadCrumbs.shift();
-        }
+        Sentry.addBreadcrumb({
+            category: level,
+            message: message instanceof Error ? String(message) : toText(message),
+            level: breadcrumbLevel,
+            data: meta,
+        });
     }
 
     private ensureUser(user: string | number | User): Sentry.User {

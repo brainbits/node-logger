@@ -8,9 +8,16 @@ interface LogData {
 }
 
 /**
- * Errors may carry a context, which is logged with them
+ * An error or an object logged as message. Errors may carry a context, which is logged with them.
  */
-type ErrorWithContext = Error & { context?: Record<string, unknown> };
+interface MessageObject {
+    message?: unknown;
+    name?: unknown;
+    stack?: unknown;
+    cause?: unknown;
+    context?: Record<string, unknown>;
+    [key: string]: unknown;
+}
 
 const maxStackTraceLines = 10;
 const maxCauses = 10;
@@ -42,14 +49,39 @@ function stringifyExtras(object: object | undefined): string {
     return isNonEmptyObject(object) ? JSON.stringify(object) : '[]';
 }
 
+/**
+ * @description Returns a readable text for values of objects logged as message
+ */
+function toText(value: unknown): string {
+    if (value == null) {
+        return '';
+    }
+
+    return typeof value === 'string' ? value : JSON.stringify(value);
+}
+
 function formatError({ name, message }: Error): string {
     return `${name} - ${message || '-'}`;
 }
 
 /**
+ * @description Checks if the value is an error or an object (but no array, regexp, map, set or date)
+ */
+function isMessageObject(value: unknown): value is MessageObject {
+    return typeof value === 'object'
+        && value !== null
+        && !Array.isArray(value)
+        && ![RegExp, Map, Set, Date].some(type => value.constructor === type);
+}
+
+/**
  * @description Returns the stack trace lines without the error message itself
  */
-function getStackTrace(stack = ''): string[] {
+function getStackTrace(stack: unknown): string[] {
+    if (typeof stack !== 'string') {
+        return [];
+    }
+
     const lines = stack
         .split('\n')
         .map(line => line.trim())
@@ -66,13 +98,17 @@ function getStackTrace(stack = ''): string[] {
 }
 
 /**
- * @description Returns the chain of errors that caused the error
+ * @description Returns the chain of causes, which ends with the first cause that is no error
  */
-function getCauses(error: Error): string[] {
+function getCauses(cause: unknown): string[] {
     const causes: string[] = [];
-    let { cause } = error;
 
-    while (cause instanceof Error && causes.length < maxCauses) {
+    while (cause != null && causes.length < maxCauses) {
+        if (!(cause instanceof Error)) {
+            causes.push(toText(cause));
+            break;
+        }
+
         causes.push(formatError(cause));
         ({ cause } = cause);
     }
@@ -81,18 +117,18 @@ function getCauses(error: Error): string[] {
 }
 
 /**
- * @description parse an error into message, context and extras
+ * @description parse an error or an object into message, context and extras
  * @returns {object} An object with message, context and extras
  */
-function parseError(error: ErrorWithContext): LogData {
-    // Own enumerable properties of the error are logged as extras
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { message, name, stack, cause, context, ...extras } = error;
+function parseObject(object: MessageObject): LogData {
+    // Own enumerable properties are logged as extras
+    const { message, name, stack, cause, context, ...extras } = object;
+    const text = toText(message);
     const stackTrace = getStackTrace(stack);
-    const causes = getCauses(error);
+    const causes = getCauses(cause);
 
     return {
-        message: formatError(error),
+        message: name ? `${toText(name)} - ${text || '-'}` : text,
         context: {
             ...context,
             ...(stackTrace.length ? { stackTrace } : {}),
@@ -123,6 +159,24 @@ function formatMonologMessage(channel: string, level: string, logData: LogData, 
 }
 
 /**
+ * @description Messages are strings or errors. Arrays and objects are no part of the API anymore,
+ * but are still logged like before for callers without type checks.
+ */
+function parseMessage(message: unknown): LogData {
+    if (isMessageObject(message)) {
+        return parseObject(message);
+    }
+
+    if (Array.isArray(message)) {
+        return { message: message.join(' ') };
+    }
+
+    // Missing messages are logged as '-', other values are primitives, regexps, maps, sets or dates
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    return { message: message == null ? '' : String(message) };
+}
+
+/**
  * @description Formatter function
  * @returns {string} The event formatted as monolog line
  */
@@ -132,7 +186,5 @@ export default function monolog({
     message,
     meta,
 }: LogEvent): string {
-    const logData = message instanceof Error ? parseError(message) : { message };
-
-    return formatMonologMessage(channel, level, logData, meta);
+    return formatMonologMessage(channel, level, parseMessage(message), meta);
 }

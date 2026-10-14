@@ -79,6 +79,14 @@ describe('monolog function', () => {
             .toEqual('[2010-01-31 23:59:59] tests.ERROR: Error - Loading the order failed {"causes":["Error - Request failed","TypeError - fetch failed"]} []');
     });
 
+    it('should add causes that are no errors to the context', () => {
+        error = new Error('Loading the order failed', { cause: new Error('Request failed', { cause: 'timeout' }) });
+        error.stack = undefined;
+
+        expect(monolog(createEvent('tests', 'error', error)))
+            .toEqual('[2010-01-31 23:59:59] tests.ERROR: Error - Loading the order failed {"causes":["Error - Request failed","timeout"]} []');
+    });
+
     it('should use the name of custom errors', () => {
         class HttpError extends Error {
             name = 'HttpError';
@@ -88,6 +96,59 @@ describe('monolog function', () => {
 
         expect(monolog(createEvent('tests', 'error', httpError)))
             .toEqual('[2010-01-31 23:59:59] tests.ERROR: HttpError - Not found [] []');
+    });
+
+    describe('messages without type checks', () => {
+        it('should use the message property of an object and log the other properties as extras', () => {
+            const message = {
+                type: 'message',
+                content: 'this is my content',
+                message: 'foo bar lib message',
+            } as unknown as LogMessage;
+
+            expect(monolog(createEvent('tests', 'info', message)))
+                .toEqual('[2010-01-31 23:59:59] tests.INFO: foo bar lib message [] {"type":"message","content":"this is my content"}');
+        });
+
+        it('should log the context of an object', () => {
+            const message = { message: 'Blob created', context: { id: 42 } } as unknown as LogMessage;
+
+            expect(monolog(createEvent('tests', 'debug', message)))
+                .toEqual('[2010-01-31 23:59:59] tests.DEBUG: Blob created {"id":42} []');
+        });
+
+        it('should log the cause of an object', () => {
+            const message = { message: 'Request failed', cause: { code: 'ECONNRESET' } } as unknown as LogMessage;
+
+            expect(monolog(createEvent('tests', 'error', message)))
+                .toEqual('[2010-01-31 23:59:59] tests.ERROR: Request failed {"causes":["{\\"code\\":\\"ECONNRESET\\"}"]} []');
+        });
+
+        it('should log an object without message as extras', () => {
+            const message = { query: 'order', limit: 10 } as unknown as LogMessage;
+
+            expect(monolog(createEvent('tests', 'debug', message)))
+                .toEqual('[2010-01-31 23:59:59] tests.DEBUG: - [] {"query":"order","limit":10}');
+        });
+
+        it('should join arrays with spaces', () => {
+            const message = ['my', 'message'] as unknown as LogMessage;
+
+            expect(monolog(createEvent('tests', 'debug', message)))
+                .toEqual('[2010-01-31 23:59:59] tests.DEBUG: my message [] []');
+        });
+
+        it.each([undefined, null])('should use a dash for %s', (message) => {
+            expect(monolog(createEvent('tests', 'info', message as unknown as LogMessage)))
+                .toEqual('[2010-01-31 23:59:59] tests.INFO: - [] []');
+        });
+
+        it('should stringify other values', () => {
+            const message = 42 as unknown as LogMessage;
+
+            expect(monolog(createEvent('tests', 'debug', message)))
+                .toEqual('[2010-01-31 23:59:59] tests.DEBUG: 42 [] []');
+        });
     });
 
     describe('Stacktrace handling', () => {

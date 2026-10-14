@@ -303,7 +303,7 @@ describe('PluginSentry', () => {
         expect(scope.setExtra).not.toHaveBeenCalledWith('user', 'baz');
     });
 
-    it('should add breadcrumbs for next exception', () => {
+    it('should add breadcrumbs for events below the exceptionLevel', () => {
         const plugin = new PluginSentry(config);
 
         plugin.log({
@@ -313,19 +313,75 @@ describe('PluginSentry', () => {
             meta: { foo: 'bar' },
         });
 
-        expect(Sentry.addBreadcrumb).not.toHaveBeenCalled();
-
-        plugin.log({
-            channel: 'test',
-            message: new Error(),
-            level: 'error',
-        });
-
-        expect(Sentry.addBreadcrumb).toHaveBeenCalledWith({
+        expect(Sentry.addBreadcrumb).toHaveBeenCalledExactlyOnceWith({
             category: 'info',
             level: 'info',
             message: 'some message',
             data: { foo: 'bar' },
+        });
+        expect(Sentry.captureMessage).not.toHaveBeenCalled();
+    });
+
+    it('should not add breadcrumbs for levels without breadcrumb level', () => {
+        config.sentry = { ...config.sentry, breadcrumbLevelMap: { info: 'info' } };
+        const plugin = new PluginSentry(config);
+
+        plugin.log({
+            channel: 'test',
+            message: 'some message',
+            level: 'debug',
+        });
+
+        expect(Sentry.addBreadcrumb).not.toHaveBeenCalled();
+    });
+
+    describe('messages without type checks', () => {
+        it.each([
+            [{ message: 'Blob created', context: { id: 42 } }, 'Blob created'],
+            [{ query: 'order' }, '{"query":"order"}'],
+            [['my', 'message'], 'my message'],
+        ])('should send %j as readable breadcrumb', (message, expected) => {
+            const plugin = new PluginSentry(config);
+
+            plugin.log({
+                channel: 'test',
+                message: message as unknown as string,
+                level: 'debug',
+            });
+
+            expect(Sentry.addBreadcrumb).toHaveBeenCalledWith(expect.objectContaining({ message: expected }));
+        });
+
+        it.each([
+            ['circular objects', (() => {
+                const message: Record<string, unknown> = { query: 'order' };
+                message.self = message;
+                return message;
+            })()],
+            ['BigInts', { id: 1n }],
+        ])('should not fail for %s', (_, message) => {
+            const plugin = new PluginSentry(config);
+
+            expect(() => plugin.log({
+                channel: 'test',
+                message: message as unknown as string,
+                level: 'debug',
+            })).not.toThrow();
+            expect(Sentry.addBreadcrumb).toHaveBeenCalledWith(expect.objectContaining({ message: '[object Object]' }));
+        });
+
+        it('should send objects as readable message and keep them as extra', () => {
+            const plugin = new PluginSentry(config);
+            const message = { message: 'Blob failed', context: { id: 42 } };
+
+            plugin.log({
+                channel: 'test',
+                message: message as unknown as string,
+                level: 'error',
+            });
+
+            expect(Sentry.captureMessage).toHaveBeenCalledWith('Blob failed');
+            expect(scope.setExtra).toHaveBeenCalledWith('message', message);
         });
     });
 
