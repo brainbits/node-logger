@@ -1,4 +1,8 @@
 # Logger
+## Requirements
+
+Node.js 22.12 or newer. The packages are ES modules and ship their own TypeScript types.
+
 ## Installation
 `yarn add @brainbits/node-logger @brainbits/node-logger-formatter-monolog`
 
@@ -13,7 +17,7 @@ You have to add a formatter to your `package.json`. E. g. the monolog formatter:
 
 ```json
 "nodeLogger": {
-    "formatter": "@brainbits/node-node-logger-node-logger-formatter-monolog"
+    "formatter": "@brainbits/node-logger-formatter-monolog"
 }
 ```
 
@@ -30,21 +34,7 @@ You can add more parameters to your `"nodeLogger": {}` section.
 ```timerLevel``` Timer level (string)
 >Default: `debug`
 
-```levels``` Levels (sorted array)
-> Default:
-```javascript [
-    'emergency',
-    'alert',
-    'critical',
-    'error',
-    'warning',
-    'notice',
-    'info', // max level default
-    'debug',
-]
-```
-
-```outputs``` Outputs (object)
+```outputs``` Outputs (object). A level without output uses the output of the next more severe level.
 > Default:
 ```javascript
 {
@@ -58,7 +48,7 @@ You can add more parameters to your `"nodeLogger": {}` section.
 ```json
 "nodeLogger": {
     "plugins": [
-        "@brainbits/node-node-logger-plugin-<name>"
+        "@brainbits/node-logger-plugin-<name>"
     ]
 }
 ```
@@ -76,7 +66,23 @@ You can set your own `ENV_VARS` in your package.json with `env(<env>, <fallback[
 }
 ```
 
-This will take the value of LOGGER_LEVEL or "info" as fallback. The fallback is optional. If there is no suitable value the default is set.
+This will take the value of LOGGER_LEVEL or "info" as fallback. The fallback is optional: if the variable is not set or
+empty and there is no fallback, the option is left out and its default applies. No error is thrown for missing
+variables.
+
+### Validation
+
+The configuration is validated whenever a `Logger` is created. Missing or invalid values and unknown options
+throw an error that lists all problems at once:
+
+```
+Error: Invalid node-logger configuration:
+✖ Unrecognized key: "maxlevel"
+✖ Invalid option: expected one of "emergency"|"alert"|"critical"|"error"|"warning"|"notice"|"info"|"debug"
+  → at sentry.exceptionLevel
+```
+
+Values set with `env()` are validated as well, after the environment variables have been resolved.
 
 ## Usage
 ### Create a Logger instance
@@ -92,43 +98,39 @@ import { Logger } from '@brainbits/node-logger';
 
 const config = {
     maxLevel: 'error',
-    level: [
-        'error',
-        'info',
-        'debug',
-    ],
-    formatter: (event) => {
-        console.log(event)
-    }
+    formatter: event => JSON.stringify(event),
 };
 
 const logger = new Logger(config);
 ```
 
-First argument is a string to define your context.
-
-Second argument is the entire configration object. You can override the configuration in your `package.json` here.
+The configuration object overrides the configuration in your `package.json`.
 
 ### Default logger
 ```javascript
-import Logger from '@brainbits/node-logger';
+import { Logger } from '@brainbits/node-logger';
 
 const logger = new Logger();
 
 const meta = {
-    foo: 'bar';
+    foo: 'bar',
 };
 
 logger.info('This is my message', meta);
+
+// The level can also be passed as argument
+logger.log('info', 'This is my message', meta);
 ```
 
 ### Timer feature
-There is a timer function `logger.start(<message>)`
+There is a timer function `logger.start(<label>)`. `logger.stop(<label>, <meta>)` logs the elapsed time with the
+`timerLevel`.
 ```javascript
-import { logger } from '@brainbits/node-logger';
+import { Logger } from '@brainbits/node-logger';
 
+const logger = new Logger();
 const meta = {
-    foo: 'bar';
+    foo: 'bar',
 };
 
 logger.start('timer');
@@ -148,7 +150,7 @@ function loadAsyncShit() {
 `logger.<level>(<message>, <meta>)`
 
 ### Levels `<level>`
-Pick one of these levels (default):
+The syslog severity levels (RFC 5424), from the most to the least severe:
 
 - 0: `emergency`
 - 1: `alert`
@@ -160,7 +162,15 @@ Pick one of these levels (default):
 - 7: `debug` (default: no ouput [maxLevel])
 
 ### Message `<message>`
-Message can be a `string`, `array` or `object` (and `Error` object)
+Message is a `string` or an `Error`. Errors are logged with their stack trace and the chain of errors given as
+`cause`. A `context` property of an error is logged as well:
+
+```javascript
+const error = new Error('Loading the order failed', { cause: requestError });
+error.context = { orderId: 42 };
+
+logger.error(error);
+```
 
 ### Meta `<meta>`
 Must be an object. Used for additional context data.
@@ -169,4 +179,37 @@ Must be an object. Used for additional context data.
 logger.info('This is my message', { foo: 'bar' });
 ```
 
-Caution: If message is an object and meta has the same property, meta will override this property.
+Caution: If the context of an error and meta have the same property, meta will override this property.
+
+## Writing plugins
+
+A plugin is a class exported as default export. It gets the validated configuration in its constructor and every log
+event in `log()`. A static `configSchema` adds the plugin's options to the configuration, so the logger validates them
+together with its own options:
+
+```typescript
+import type { LogEvent, Plugin, ValidatedConfig } from '@brainbits/node-logger';
+import { z } from 'zod';
+
+const myPluginSchema = z.strictObject({
+    enabled: z.boolean().default(true),
+});
+
+declare module '@brainbits/node-logger' {
+    interface Config {
+        myPlugin?: z.input<typeof myPluginSchema>;
+    }
+}
+
+export default class MyPlugin implements Plugin {
+    static readonly configSchema = z.object({ myPlugin: myPluginSchema.prefault({}) });
+
+    constructor(config: ValidatedConfig) {
+        // ...
+    }
+
+    log(event: LogEvent): void {
+        // ...
+    }
+}
+```

@@ -1,0 +1,9 @@
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "noEmit": true,
+        // Resolve workspace packages to their sources, so no build is needed for type checks and tests
+        "customConditions": ["@brainbits/source"]
+    },
+    "include": ["packages/*/src", "vitest.config.ts"]
+}

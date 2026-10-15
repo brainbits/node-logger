@@ -1,5 +1,4 @@
 import { Logger } from '@brainbits/node-logger';
-import fetch from 'node-fetch';
 
 const urls = [
     'https://jsonplaceholder.typicode.com/posts/1',
@@ -40,9 +39,7 @@ async function goGetIt(url) {
         logger.error(error, {
             tags: {
                 url,
-                foo: {
-                    bar: 'lib'
-                }
+                foo: 'bar'
             }
         });
     } finally {
