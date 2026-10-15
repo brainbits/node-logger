@@ -1,6 +1,6 @@
 {
     "name": "@brainbits/node-logger-plugin-sentry",
-    "version": "2.5.1",
+    "version": "3.0.0",
     "description": "Logger plugin sentry",
     "type": "module",
     "exports": {
@@ -35,7 +35,7 @@
         "zod": "^4.6.7"
     },
     "peerDependencies": {
-        "@brainbits/node-logger": "^2.2.3"
+        "@brainbits/node-logger": "^3.0.0"
     },
     "publishConfig": {
         "access": "public"

@@ -1,6 +1,6 @@
 {
     "name": "@brainbits/node-logger-monorepo",
-    "version": "2.5.1",
+    "version": "3.0.0",
     "private": true,
     "type": "module",
     "description": "Logger for node projects",

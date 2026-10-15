@@ -1,6 +1,6 @@
 {
     "name": "@brainbits/node-logger-formatter-monolog",
-    "version": "2.5.1",
+    "version": "3.0.0",
     "description": "Logger for node projects",
     "type": "module",
     "exports": {
@@ -34,7 +34,7 @@
         "date-fns": "^4.4.0"
     },
     "peerDependencies": {
-        "@brainbits/node-logger": "^2.2.3"
+        "@brainbits/node-logger": "^3.0.0"
     },
     "publishConfig": {
         "access": "public"
