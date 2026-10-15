@@ -21,7 +21,8 @@
     },
     "repository": {
         "type": "git",
-        "url": "git@github.com:brainbits/node-logger.git"
+        "url": "git+https://github.com/brainbits/node-logger.git",
+        "directory": "packages/node-logger"
     },
     "keywords": [
         "logger",
