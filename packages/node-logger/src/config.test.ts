@@ -21,10 +21,10 @@ function invalid(config: unknown): Config {
  */
 function createProject(name: string, packageJson: Record<string, unknown>): string {
     const projectDir = join(root, name);
-    const writeModule = (moduleName: string, source: string) => {
+    const writeModule = (moduleName: string, source: string, type = 'module') => {
         const moduleDir = join(projectDir, 'node_modules', moduleName);
         fs.mkdirSync(moduleDir, { recursive: true });
-        fs.writeFileSync(join(moduleDir, 'package.json'), JSON.stringify({ type: 'module', exports: './index.js' }));
+        fs.writeFileSync(join(moduleDir, 'package.json'), JSON.stringify({ type, exports: './index.js' }));
         fs.writeFileSync(join(moduleDir, 'index.js'), source);
     };
 
@@ -47,6 +47,9 @@ function createProject(name: string, packageJson: Record<string, unknown>): stri
             static configSchema = z.object({ channel: z.number() });
         }
     `);
+    writeModule('cjs-formatter', 'module.exports = function cjsFormatter() { return \'cjs\'; };', 'commonjs');
+    writeModule('cjs-plugin', 'module.exports = class CjsPlugin {};', 'commonjs');
+    writeModule('named-plugin', 'export class NamedPlugin {}');
     fs.symlinkSync(zodDir, join(projectDir, 'node_modules', 'zod'));
 
     return projectDir;
@@ -224,6 +227,31 @@ describe('loadConfiguration', () => {
         it('throws an error if a plugin cannot be found', () => {
             expect(() => loadConfiguration({ formatter, plugins: ['unknown-plugin'] }))
                 .toThrow(/^Plugin unknown-plugin not found in .*node_modules: /);
+        });
+
+        it('loads CommonJS modules without default export', () => {
+            const config = loadConfiguration({ formatter: 'cjs-formatter', plugins: ['cjs-plugin'] });
+
+            expect(config.formatter({ channel: 'test', level: 'info', message: 'message' })).toBe('cjs');
+            expect(config.plugins[0].constructor.name).toBe('CjsPlugin');
+        });
+
+        it.each([
+            ['Plugin', { formatter, plugins: ['named-plugin'] }, 'Plugin named-plugin has to export a class as default export'],
+            ['Formatter', { formatter: 'named-plugin' }, 'Formatter named-plugin has to export a function as default export'],
+        ])('throws an error if a %s has no default export', (_, config, message) => {
+            expect(() => loadConfiguration(config)).toThrow(message);
+        });
+
+        it('reads the package.json only once per working directory', () => {
+            const projectDir = createProject('cached', { name: 'testpackage' });
+            const readFileSync = vi.spyOn(fs, 'readFileSync');
+            vi.spyOn(process, 'cwd').mockReturnValue(projectDir);
+
+            loadConfiguration({ formatter });
+            loadConfiguration({ formatter });
+
+            expect(readFileSync).toHaveBeenCalledExactlyOnceWith(join(projectDir, 'package.json'), 'utf8');
         });
 
         it('validates the options of plugins and applies their defaults', () => {

@@ -23,20 +23,29 @@ function getConfigFromPackage(packageJsonPath: string): Config {
 function findPackageJson(): string | null {
     let dir = resolve(process.cwd());
 
-    do {
+    for (;;) {
         const pkgFile = join(dir, 'package.json');
 
         if (fs.existsSync(pkgFile) && fs.statSync(pkgFile).isFile()) {
             return pkgFile;
         }
 
-        dir = join(dir, '..');
-    } while (dir !== resolve(dir, '..'));
+        const parent = dirname(dir);
 
-    return null;
+        if (parent === dir) {
+            return null;
+        }
+
+        dir = parent;
+    }
 }
 
-function loadConfigFromPackage(): PackageConfigDefinition {
+/**
+ * The package.json is read once per working directory, as loggers may be created frequently
+ */
+const packageConfigCache = new Map<string, PackageConfigDefinition>();
+
+function readConfigFromPackage(): PackageConfigDefinition {
     const pkgFile = findPackageJson();
 
     if (!pkgFile) {
@@ -51,39 +60,58 @@ function loadConfigFromPackage(): PackageConfigDefinition {
     };
 }
 
-function loadModule<T>(moduleName: string, require: ModuleRequire | null): T {
-    if (!require) {
-        throw new Error('No package.json available to resolve the module from');
+function loadConfigFromPackage(): PackageConfigDefinition {
+    const cwd = process.cwd();
+    let definition = packageConfigCache.get(cwd);
+
+    if (!definition) {
+        definition = readConfigFromPackage();
+        packageConfigCache.set(cwd, definition);
     }
 
-    // Synchronous require() of ES modules keeps the Logger constructor synchronous
-    return (require(moduleName) as { default: T }).default;
+    return definition;
 }
 
-function loadFormatter(config: ValidatedConfig, { path, require }: PackageConfigDefinition): Formatter {
+function loadModule<T>(kind: 'Formatter' | 'Plugin', moduleName: string, { path, require }: PackageConfigDefinition): T {
+    let exports: unknown;
+
+    try {
+        if (!require) {
+            throw new Error('No package.json available to resolve the module from');
+        }
+
+        // Synchronous require() of ES modules keeps the Logger constructor synchronous
+        exports = require(moduleName);
+    } catch (error) {
+        throw new Error(`${kind} ${moduleName} not found in ${path}: ${(error as Error).message}`, { cause: error });
+    }
+
+    // CommonJS modules may export the formatter or plugin directly instead of as default export
+    const value = (exports as { default?: unknown } | null)?.default ?? exports;
+
+    if (typeof value !== 'function') {
+        throw new Error(`${kind} ${moduleName} has to export a ${kind === 'Formatter' ? 'function' : 'class'} as default export`);
+    }
+
+    return value as T;
+}
+
+function loadFormatter(config: ValidatedConfig, packageConfigDefinition: PackageConfigDefinition): Formatter {
     const { formatter } = config;
 
     if (typeof formatter === 'function') {
         return formatter;
     }
 
-    if (!require) {
+    if (!packageConfigDefinition.require) {
         throw new Error('Formatter must be configured as function unless a package.json is available');
     }
 
-    try {
-        return loadModule<Formatter>(formatter, require);
-    } catch (error) {
-        throw new Error(`Formatter ${formatter} not found in ${path}: ${(error as Error).message}`, { cause: error });
-    }
+    return loadModule<Formatter>('Formatter', formatter, packageConfigDefinition);
 }
 
-function loadPlugin(pluginName: string, { path, require }: PackageConfigDefinition): PluginConstructor {
-    try {
-        return loadModule<PluginConstructor>(pluginName, require);
-    } catch (error) {
-        throw new Error(`Plugin ${pluginName} not found in ${path}: ${(error as Error).message}`, { cause: error });
-    }
+function loadPlugin(pluginName: string, packageConfigDefinition: PackageConfigDefinition): PluginConstructor {
+    return loadModule<PluginConstructor>('Plugin', pluginName, packageConfigDefinition);
 }
 
 function deepParseEnv<T>(config: T): T {
