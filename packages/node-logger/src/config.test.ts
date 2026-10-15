@@ -308,26 +308,40 @@ describe('loadConfiguration', () => {
             expect(config.channel).toEqual('baz');
         });
 
-        it('throws error on missing variable', () => {
-            delete process.env.MY_TEST;
+        it.each([
+            ['missing', undefined],
+            ['empty', ''],
+        ])('use the default if the variable is %s and has no fallback', (_, value) => {
+            if (value === undefined) {
+                delete process.env.MY_TEST;
+            } else {
+                process.env.MY_TEST = value;
+            }
 
-            expect(() => loadConfiguration({
+            const config = loadConfiguration(invalid({
                 formatter,
                 channel: 'env(MY_TEST)',
-            })).toThrow(/MY_TEST/);
+                maxLevel: 'env(MY_TEST)',
+                context: { user: 'env(MY_TEST)' },
+            }));
+
+            delete process.env.MY_TEST;
+
+            expect(config).toMatchObject({ channel: 'unknown', maxLevel: 'info', context: {} });
+            expect(config.context).not.toHaveProperty('user');
         });
 
-        it('allow empty strings as valid values', () => {
+        it('use the fallback if the variable is empty', () => {
             process.env.MY_TEST = '';
 
             const config = loadConfiguration({
                 formatter,
-                channel: 'env(MY_TEST)',
+                channel: 'env(MY_TEST, baz)',
             });
 
             delete process.env.MY_TEST;
 
-            expect(config.channel).toEqual('');
+            expect(config.channel).toEqual('baz');
         });
 
         it('keeps values that are no strings', () => {

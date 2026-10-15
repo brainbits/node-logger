@@ -66,11 +66,13 @@ You can set your own `ENV_VARS` in your package.json with `env(<env>, <fallback[
 }
 ```
 
-This will take the value of LOGGER_LEVEL or "info" as fallback. The fallback is optional. If there is no suitable value the default is set.
+This will take the value of LOGGER_LEVEL or "info" as fallback. The fallback is optional: if the variable is not set or
+empty and there is no fallback, the option is left out and its default applies. No error is thrown for missing
+variables.
 
 ### Validation
 
-The configuration is validated when the first `Logger` is created. Missing or invalid values and unknown options
+The configuration is validated whenever a `Logger` is created. Missing or invalid values and unknown options
 throw an error that lists all problems at once:
 
 ```

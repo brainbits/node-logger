@@ -27,5 +27,8 @@ breadcrumbs of the next exception.
 | `breadcrumbLevelMap` | all levels     | Maps log levels to Sentry breadcrumb levels, unmapped levels are skipped |
 | `tags`               | `{}`           | Tags added to every exception                                       |
 
+Without DSN nothing is sent to Sentry. So `"dsn": "env(SENTRY_DSN)"` works without error if `SENTRY_DSN` is not set or
+empty, e.g. in local development.
+
 The options are validated together with the logger configuration. Booleans and numbers may be strings, so they can be
 set with `env()`.

@@ -114,7 +114,11 @@ function loadPlugin(pluginName: string, packageConfigDefinition: PackageConfigDe
     return loadModule<PluginConstructor>('Plugin', pluginName, packageConfigDefinition);
 }
 
-function deepParseEnv<T>(config: T): T {
+/**
+ * Replaces `env(NAME, fallback)` with the value of the environment variable. Unset or empty variables
+ * use the fallback, without fallback the option is left out, so its default applies.
+ */
+function deepParseEnv<T>(config: T): T | undefined {
     if (!config || Array.isArray(config) || typeof config === 'boolean' || typeof config === 'function') {
         return config;
     }
@@ -125,15 +129,7 @@ function deepParseEnv<T>(config: T): T {
         if (match) {
             const [, name, , fallback] = match;
 
-            if (process.env[name] !== undefined) {
-                return process.env[name] as T;
-            }
-
-            if (fallback !== undefined) {
-                return fallback as T;
-            }
-
-            throw new Error(`Env ${name} is not set nor has a fallback!`);
+            return (process.env[name] || fallback) as T | undefined;
         }
 
         return config;
@@ -144,7 +140,9 @@ function deepParseEnv<T>(config: T): T {
     }
 
     return Object.fromEntries(
-        Object.entries(config).map(([key, value]) => [key, deepParseEnv(value)]),
+        Object.entries(config as Record<string, unknown>)
+            .map(([key, value]) => [key, deepParseEnv(value)])
+            .filter(([, value]) => value !== undefined),
     ) as T;
 }
 
